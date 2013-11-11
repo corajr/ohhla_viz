@@ -99,6 +99,16 @@ App.DocumentsForTopicView = Ember.ContainerView.extend({
     this.pushObject(tableView);
   },
 });
+
+App.AutocompleteView = Ember.View.extend({
+  templateName: 'autocomplete',
+  didInsertElement: function() {
+    this.$().on('DOMNodeInserted', 'li', function(e) {
+      //TODO: ensure that this doesn't always happen; do an enter-exit kind of deal?
+      $(e.target).show('slow');
+    });
+  }
+});
 // App.DocCountsLineView = Ember.D3.ChartView.extend({
 //   width: 'auto',
 //   height: 30,

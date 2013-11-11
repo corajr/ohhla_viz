@@ -15,19 +15,19 @@ html, body {
 #download {
     background-image: url("../img/download.svg");
 }
-#download:hover {
+#download:hover, #download.active {
     background-image: url("../img/download_selected.svg");    
 }
 #config {
     background-image: url("../img/gear.svg");
 }
-#config:hover {
+#config:hover, #config.active {
     background-image: url("../img/gear_selected.svg");
 }
 #help {
     background-image: url("../img/help.svg");
 }
-#help:hover {
+#help:hover, #help.active {
     background-image: url("../img/help_selected.svg");
 }
   #topics_list {
@@ -37,6 +37,7 @@ html, body {
   }
   #topics_list ul {
     margin: 0px ! important;
+    padding: 0px ! important;
   }
   #topics_graph {
   }
@@ -101,15 +102,31 @@ h2 {
     font-weight: 500 ! important;
 }
 
-input[type="text"] {
+input[type="search"] {
     border-radius: 20px;
     -webkit-border-radius: 20px;
     -moz-border-radius: 20px;
+    background: 95% 50% url("../img/search.svg") no-repeat;
+    width: 100%;
+    padding: 0 0.5em;
+    margin-bottom: 20px;
+}
+
+input[type="search"]:focus {
+  outline: none;
 }
 
 #topics_list li {
     list-style-type: none;
     margin-bottom: 0.5em;
+}
+
+.suggestions {
+  list-style-type: none;
+}
+.suggestions li {
+  text-indent: 2em;
+  font-size: 90%;
 }
 .topicName {
     font-weight: 600 ! important;

@@ -23,7 +23,7 @@ App.Topic = Ember.Object.extend({
   visible: true,
 
   prevalencePercent: Ember.computed(function () {
-    return (this.get('prevalence')*100).toFixed(2) + "% of corpus";
+    return (this.get('prevalence')*100).toFixed(2) + "%";
   }).property('prevalence'),
 
   relatedTopics: Ember.computed(function () {

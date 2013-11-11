@@ -213,3 +213,22 @@ App.TopicSummaryController = Ember.ObjectController.extend({
     return graph;
   }).property('threshold', 'topics.@each.visible')  
 });
+
+App.AutocompleteController = Ember.Controller.extend({
+  searchText: null,
+  searchResults: function() {
+    var searchText = this.get('searchText');
+    if (!searchText) { return; }
+    try {
+      var regex = new RegExp(searchText, 'i');
+      var results = App.topics.filter(function(topic) {
+        return topic.get("label").match(regex);
+      });
+      results.sort(function (a,b) { return b.get("prevalence") - a.get("prevalence")});
+      return results.slice(0,5).map(function (d) { return d.get("label") + " (" + d.get("prevalencePercent") + ")";});      
+    } catch (e) {
+      console.error(e);
+      return;
+    }
+  }.property('searchText'), 
+});
