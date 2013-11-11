@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Paper Machines</title>
-<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/bootstrap.css" rel="stylesheet">
 <link href="css/bootstrap-tour.css" rel="stylesheet">
 <link href="css/style.css" rel="stylesheet">
 <link href="css/ember-table.css" rel="stylesheet">
@@ -40,17 +40,17 @@
   </script>
 
   <script type="text/x-handlebars" data-template-name="document">
-    <div class="row-fluid">
-      <div class="span12">
+    <div class="row">
+      <div class="col-md-12">
         <h2>{{itemLink title itemID}}</h2>
         <p>{{date date}}</p>
       </div>
     </div>    
-    <div class="row-fluid">
-      <div class="span6">
+    <div class="row">
+      <div class="col-md-6">
       {{view App.DocTopicsView }}
       </div>
-      <div class="span6">
+      <div class="col-md-6">
       {{view Ember.D3.WordCloudView contentBinding="topWords" colorBinding="colors" height=600}}
       </div>
     </div>
@@ -58,8 +58,8 @@
 
   <script type="text/x-handlebars" data-template-name="documents">
     <!-- <h2>Documents</h2> -->
-    <div class="row-fluid">
-      <div class="span12">
+    <div class="row">
+      <div class="col-md-12">
         <table class="table table-condensed">
           <thead>
             <tr>
@@ -95,18 +95,18 @@
   </script>
 
   <script type="text/x-handlebars" data-template-name="topic">
-    <div class="row-fluid">
-      <div class="span12">
+    <div class="row">
+      <div class="col-md-12">
         <h1>{{ label }}</h1>
       </div>
     </div>  
-    <div class="row-fluid">
-      <div class="span4">
+    <div class="row">
+      <div class="col-md-4">
         {{ view Ember.D3.WordCloudView contentBinding="topWords" color="#d62728"}}
 
         {{ partial "relatedTopics"}}
       </div>
-      <div class="span8 presentation-container">
+      <div class="col-md-8 presentation-container">
         {{!--  {{ view App.DocumentsForTopicView }}
                 {{ render "documents" documentsForTopic }} --}}
 
@@ -116,11 +116,11 @@
   </script>
 
   <script type="text/x-handlebars" data-template-name="topicSummary">
-    <div class="row-fluid">
-      <div class="span12">
+    <div class="row">
+      <div class="col-md-12">
         {{ view BC.RangeInput max="1" step="0.01" valueBinding="controller.threshold"}}
       </div>     
-      <div class="span12">        
+      <div class="col-md-12">        
         {{ view Ember.D3.NetworkView contentBinding="controller.content"}}
       </div>
     </div>  
@@ -156,13 +156,13 @@
   </script>
 
   <script type="text/x-handlebars" data-template-name="topicGraph">
-    <div class="row-fluid">
-      <div class="span3">
+    <div class="row">
+      <div class="col-md-3">
       {{view Ember.TextField valueBinding="App.searchQuery"}}
 
         {{ render "topics" }}
       </div>
-      <div class="span9">
+      <div class="col-md-9">
 {{!--        {{view Ember.ContainerView currentViewBinding="App.docCountView"}} --}}
         <div id="topics_graph">
           {{outlet}}
@@ -170,8 +170,8 @@
       </div>
     </div>
 
-    <div class="row-fluid">
-      <div class="span12 presentation-container">
+    <div class="row">
+      <div class="col-md-12 presentation-container">
       {{view Ember.Table.TablesContainer controllerBinding="App.documentsTable"}}
       </div>
     </div>
@@ -184,7 +184,7 @@
   <script src="js/libs/ember-1.0.0-rc.5.js"></script>
   <script src="js/libs/ember-table.js"></script>
   <script src="js/libs/crossfilter.js"></script>
-  <script src="js/libs/bootstrap.min.js"></script>
+  <script src="js/libs/bootstrap.js"></script>
   <script src="js/libs/bootstrap-tour.js"></script>
   <script src="js/libs/ember-crossfilter.js"></script>
   <script src="js/libs/d3.min.js"></script>
