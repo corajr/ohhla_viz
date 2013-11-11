@@ -4,80 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Paper Machines</title>
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/bootstrap-tour.css" rel="stylesheet">
 <link href="css/style.css" rel="stylesheet">
 <link href="css/ember-table.css" rel="stylesheet">
-<style type="text/css">
-  body {
-    padding-top: 60px;
-  }
-  #topics_list {
-    color: lightgray;
-    height: 250px ! important;
-    overflow: scroll;
-  }
-  #topics_graph {
-  }
-
-  .topiclink, .topiclink:hover {
-    color: inherit;
-  }
-
-  .node {
-  stroke: #fff;
-  stroke-width: 1.5px;
-}
-
-.link {
-  stroke: #999;
-  stroke-opacity: .6;
-}
-
-  .showScroll.lion::-webkit-scrollbar {
-    -webkit-appearance: none;
-    width: 7px;
-  }
-
-  .showScroll.lion::-webkit-scrollbar-thumb {
-      border-radius: 4px;
-      background-color: rgba(0,0,0,.5);
-      -webkit-box-shadow: 0 0 1px rgba(255,255,255,.5);
-  }
-
-  .caret {
-    margin-top: 8px;
-  }
-  .caret.up {
-    border-top: 0;
-    border-bottom: 4px solid #000000;
-    content: "";
-  }
-  .axis {
-    shape-rendering: crispEdges;
-    pointer-events: none;
-    font: 10px sans-serif;
-  }
-
-  .x.axis line, .y.axis line {
-    stroke: #fff;
-    stroke-width:1;
-    opacity: 0.4;
-  }
-
-  .x.axis path, .y.axis path {
-    display: none;
-  }
-  .x.axis .minor {
-    stroke-width: 1;
-    stroke-opacity: 0.2;
-  }
-  .tiny {
-    font-size: x-small;
-  }
-</style>
 </head>
 <body>
 
   <script type="text/x-handlebars" data-template-name="application">
+<!--
     <div class="navbar navbar-fixed-top">
       <div class="navbar-inner">
         <div class="container-fluid">
@@ -85,6 +20,18 @@
           {{ view App.NavbarItemsView }}
         </div>
       </div>
+    </div>
+    -->
+
+    <div class="container-fluid">
+      <div class="control-icons">
+        <a id="download" href="#"></a>
+        <a id="config" href="#"></a>
+        <a id="help" href="#"></a>
+      </div>
+
+      <h2>{{ App.collectionName }}</h2>
+
     </div>
 
     <div class="container-fluid">
@@ -193,9 +140,12 @@
     <div id="topics_list" class="showScroll">
       <ul>
       {{#each topic in controller }}
-        <li {{bindAttr style=topic.style}} 
+        <li {{!--{{bindAttr style=topic.style}} --}}
+            {{bindAttr class=topic.isSelected}}
             {{action toggle topic}}>
-          <span class="tiny" {{bindAttr title=topic.prevalencePercent}}>{{topic.label}}</span>
+          {{view App.TopicPrevalenceIconView contentBinding="topic"}}
+          <div class="topicName">{{topic.abbreviatedLabel}}</div>
+          <div class="topicPercentage">{{topic.prevalencePercent}}</div>
         </li>
       {{/each}}
       </ul>
@@ -207,52 +157,12 @@
 
   <script type="text/x-handlebars" data-template-name="topicGraph">
     <div class="row-fluid">
-      <div class="span12">
+      <div class="span3">
+      {{view Ember.TextField valueBinding="App.searchQuery"}}
 
-        <div class="btn-group">
-          {{!-- {{view Ember.Select
-            contentBinding="graphTypes"
-            optionValuePath="content.id"
-            optionLabelPath="content.label"
-            valueBinding="graphType"            
-          }} --}}
-          <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
-            Graph Type
-              <span class="caret"></span>
-            </a>
-            <ul class="dropdown-menu">
-              <li>{{#linkTo topicGraph.stacked topics.selected}}Stacked Area{{/linkTo}}</li>
-              <li>{{#linkTo topicGraph.stream topics.selected}}Streamgraph{{/linkTo}}</li>
-              <li>{{#linkTo topicGraph.line topics.selected}}Line Graph{{/linkTo}}</li>
-            </ul>
-          {{#linkTo "index" classNames=[btn]}}Reset{{/linkTo}}
-          <button class="btn">Save</button>
-        </div>
-
-        {{view Ember.TextField valueBinding="App.searchQuery"}}
-
-      </div>
-    </div>
-
-    <br/>
-
-    <div class="row-fluid">
-      <div class="span2">
-        <div id="topic_selector">
-          <div class="btn-group">
-            <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
-              Sort Topics
-              <span class="caret"></span>
-            </a>
-            <ul class="dropdown-menu">
-              <li><a href="#" {{action sort "prevalence"}}>Most prevalent</a></li>
-              <li><a href="#" {{action sort "stdDev"}}>Most variable</a></li>
-            </ul>
-          </div>
-        </div>
         {{ render "topics" }}
       </div>
-      <div class="span10">
+      <div class="span9">
 {{!--        {{view Ember.ContainerView currentViewBinding="App.docCountView"}} --}}
         <div id="topics_graph">
           {{outlet}}
@@ -275,6 +185,7 @@
   <script src="js/libs/ember-table.js"></script>
   <script src="js/libs/crossfilter.js"></script>
   <script src="js/libs/bootstrap.min.js"></script>
+  <script src="js/libs/bootstrap-tour.js"></script>
   <script src="js/libs/ember-crossfilter.js"></script>
   <script src="js/libs/d3.min.js"></script>
   <script src="js/libs/d3.layout.cloud.js"></script>
@@ -293,7 +204,9 @@
   <script src="js/wordcloud.js"></script>
   <script src="js/topicgraph.js"></script>
   <script src="js/network.js"></script>
+  <script src="js/controls.js"></script>
   <script type="text/javascript">
+
   // http://simurai.com/post/8083942390/force-lion-scrollbar
   if (navigator.appVersion.indexOf("10_7") != -1) {
     jQuery('.showScroll').addClass('lion');

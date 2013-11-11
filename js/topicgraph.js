@@ -4,7 +4,14 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
   minimumWidth: 600,
   margin: {top: 20, right: 0, bottom: 30, left: 45},
 
-  yAxisLabel: "% of Corpus",
+  yAxisLabel: Ember.computed(function () {
+    var graphType = this.get('controller.graphType');
+    if (graphType == "line") {
+      return "std. dev. from mean";
+    } else {
+      return "% of Corpus";      
+    }
+  }).property("controller.graphType"),
   graphType: Ember.computed(function () {
     return this.get('controller.graphType');
   }).property('controller.graphType'),
@@ -39,7 +46,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
       return [0, d3.max(this.get('streamData'), 
         function(d) { return d3.max(d, function(d) { return d.y0 + d.y; }); })];
     else if (graphType == 'line')
-      return [-3, 3];
+      return [-0.1, 0.1];
   }).property('graphType', 'streamData'),
 
   xScale: Ember.computed(function () {
@@ -436,7 +443,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
       graphSelection.each(function (d) {
         var topic = d[0].topic;
         var values = App.topics[topic].topWords.map(function (d) { return d.prob;});
-        var cloudFontSize = d3.scale.linear().clamp(true).domain(d3.extent(values)).range([10,36]);
+        var cloudFontSize = d3.scale.linear().clamp(true).domain(d3.extent(values)).range([8,24]);
 
         maskClouds[topic] = new MaskCloud();
         maskClouds[topic]
@@ -461,7 +468,8 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
       graphSelection.enter().append("svg:path")
           .attr("class", function (d) { return "topic" + d[0].topic;})
           .attr("d", function(d) { return line(d);})
-          .style("fill", function (d,i) { return color(d[0].topic);})
+          .style("stroke", function (d,i) { return color(d[0].topic);})
+          .style("fill", "none")
           .on("mouseover", function (d) { highlightTopic(d[0].topic);})
           .on("mouseout", unhighlightTopic)
           .on("click", getDocsForInterval);      
@@ -533,3 +541,38 @@ App.set('cloud', Ember.D3.WordCloudView.create({
   contentBinding: "App.hoverTopicWords",
   colorBinding: "App.hoverTopicColor"
 }));
+
+
+App.TopicPrevalenceIconView = Ember.D3.ChartView.extend({
+  height: 32,
+  width: 32,
+  minimumWidth: 32,
+  margin: {top: 0, right: 0, bottom: 0, left: 0},
+  scale: Ember.computed(function () {
+   return d3.scale.log()
+    .clamp(true)
+    .range([1,15])
+    .domain([0.005,1]);
+  }),
+  renderContent: function () {
+    var prevalence = this.get('content.prevalence'),
+        color = this.get('content.color'),
+        isSelected = this.get('content.isSelected'),
+        vis = this.get('vis'),
+        width = this.get('contentWidth'),
+        scale = this.get('scale');
+
+    vis.selectAll("*").remove();
+    var g = vis.append("g")
+      .attr("transform", "translate(" + width/2 + "," + width/2 + ")")
+
+    g.append("circle")
+      .attr("stroke", color)
+      .attr("fill", "none")
+      .attr("r", scale(1));
+    g.append("circle")
+        .attr("class", "inner")
+        .attr("fill", color)
+        .attr("r", scale(prevalence));
+  }.observes("content.color")
+});

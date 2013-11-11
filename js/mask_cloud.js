@@ -185,7 +185,7 @@ function MaskCloud() {
     var c = svgCanvas.getContext("2d");
 
     var svgData = "<svg xmlns='http://www.w3.org/2000/svg' width='" + width + "' height='" + height + "'>"  +
-      "<style type='text/css'>path { fill: #fff; stroke-width: 8; stroke: #000;}</style>" +
+      "<style type='text/css'>path { fill: #fff; stroke-width: 4; stroke: #000;}</style>" +
         svgText +
       "</svg>";
 

@@ -48,8 +48,7 @@ App.Topic = Ember.Object.extend({
   }).property('id', 'App.documents'),
 
   style: Ember.computed(function() {
-    var isSelected = this.get('isSelected'),
-        color = isSelected ? this.get('color') : 'lightgray';
+    var color = this.get('color');
     return "color: " + color + ";";
   }).property('color', 'isSelected'),
 
@@ -62,13 +61,22 @@ App.Topic = Ember.Object.extend({
   isSelected: false,
 
   color: Ember.computed(function () {
-    var topicColors = Ember.get(App, 'topicColors');
-    return topicColors(this.get('id'));
-  }).property('App.topicColors', 'id'),
+    var topicColors = Ember.get(App, 'topicColors'),
+        isSelected = this.get('isSelected');
+    return isSelected ? topicColors(this.get('id')) : 'lightgray';
+  }).property('App.topicColors', 'id', 'isSelected'),
 
   label: function () {
-    return data['TOPIC_LABELS'][this.id]['phrases'].slice(0,3).join(", ");
-    // var top = this.topWords.slice(0,3);
-    // return top.map(function(d){ return d.text || d;}).join(", ");    
-  }.property("id")
+    // return data['TOPIC_LABELS'][this.id]['phrases'].slice(0,3).join(", ");
+    var top = this.topWords.slice(0,3);
+    return top.map(function(d){ return d.text || d;}).join(", ");    
+  }.property("id"),
+  abbreviatedLabel: function () { 
+    var label = this.get("label"),
+        maxLength = 24;
+    if (label.length > maxLength) {
+      label = label.substring(0,maxLength - 3) + "...";
+    }
+    return label;
+  }.property("label")
 });

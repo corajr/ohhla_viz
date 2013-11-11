@@ -1,4 +1,128 @@
 html, body {
-    margin: 20px;
+    font-family: "Helvetica Neue", "Helvetica", sans-serif ! important;
+    margin: 0;
+}
+.control-icons {
+    float: right;
 }
 
+.control-icons a {
+    display: inline-block;
+    width: 64px;
+    height: 64px;
+    background-repeat: no-repeat;
+}
+#download {
+    background-image: url("../img/download.svg");
+}
+#download:hover {
+    background-image: url("../img/download_selected.svg");    
+}
+#config {
+    background-image: url("../img/gear.svg");
+}
+#config:hover {
+    background-image: url("../img/gear_selected.svg");
+}
+#help {
+    background-image: url("../img/help.svg");
+}
+#help:hover {
+    background-image: url("../img/help_selected.svg");
+}
+  #topics_list {
+    color: lightgray;
+    height: 380px ! important;
+    overflow: scroll;
+  }
+  #topics_list ul {
+    margin: 0px ! important;
+  }
+  #topics_graph {
+  }
+
+  .topiclink, .topiclink:hover {
+    color: inherit;
+  }
+
+  .node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}
+
+  .showScroll.lion::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 7px;
+  }
+
+  .showScroll.lion::-webkit-scrollbar-thumb {
+      border-radius: 4px;
+      background-color: rgba(0,0,0,.5);
+      -webkit-box-shadow: 0 0 1px rgba(255,255,255,.5);
+  }
+
+  .caret {
+    margin-top: 8px;
+  }
+  .caret.up {
+    border-top: 0;
+    border-bottom: 4px solid #000000;
+    content: "";
+  }
+  .axis {
+    shape-rendering: crispEdges;
+    pointer-events: none;
+    font: 10px sans-serif;
+  }
+
+  .x.axis line, .y.axis line {
+    stroke: #fff;
+    stroke-width:1;
+    opacity: 0.4;
+  }
+
+  .x.axis path, .y.axis path {
+    display: none;
+  }
+  .x.axis .minor {
+    stroke-width: 1;
+    stroke-opacity: 0.2;
+  }
+  .tiny {
+    font-size: x-small;
+  }
+h2 {
+    font-size: 24px ! important;
+    font-weight: 500 ! important;
+}
+
+input[type="text"] {
+    border-radius: 20px;
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
+}
+
+#topics_list li {
+    list-style-type: none;
+    margin-bottom: 0.5em;
+}
+.topicName {
+    font-weight: 600 ! important;
+}
+
+.topicPercentage {
+    font-weight: 200 ! important;
+}
+
+#topics_list svg {
+    float: left;
+    margin: 4px;
+}
+.is-selected {
+    color: black;
+}
