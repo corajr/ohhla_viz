@@ -4,9 +4,13 @@ App.Router.map(function() {
     this.route('stacked', { path: '/stacked/:selected' });
     this.route('stream');
     this.route('stream', { path: '/stream/:selected' });
+    this.route('line');
+    this.route('line', { path: '/line/:selected' });
   });
   this.route('document', {path: '/document/:itemID'});
   this.route('topic', {path: '/topic/:topicID'});
+  this.route('topicSummary');
+  this.route('documents');
   this.route('about');
 });
 
@@ -22,7 +26,8 @@ App.DocumentRoute = Ember.Route.extend({
     if (params.itemID) {
       var itemID = decodeURIComponent(params.itemID);
       console.log(itemID);
-      return App.documents.findProperty('itemID', itemID);
+      return getDoc(itemID);
+      // return App.documents.findProperty('itemID', itemID);
     }
   },
   serialize: function (model) {
@@ -79,4 +84,8 @@ App.TopicGraphStackedRoute = App.TopicGraphRoute.extend({
 
 App.TopicGraphStreamRoute = App.TopicGraphRoute.extend({
   graphType: 'stream'
+});
+
+App.TopicGraphLineRoute = App.TopicGraphRoute.extend({
+  graphType: 'line'
 });

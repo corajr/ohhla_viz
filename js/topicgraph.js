@@ -31,13 +31,15 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
     return function(d){ return timeFormat(new Date(d)); };
   }).property('timeFormat'),
 
-  maxY: Ember.computed(function () {
+  yDomain: Ember.computed(function () {
     var graphType = this.get('graphType');
     if (graphType == 'stacked')
-      return 1;
+      return [0, 1];
     else if (graphType == 'stream')
-      return d3.max(this.get('streamData'), 
-        function(d) { return d3.max(d, function(d) { return d.y0 + d.y; }); });
+      return [0, d3.max(this.get('streamData'), 
+        function(d) { return d3.max(d, function(d) { return d.y0 + d.y; }); })];
+    else if (graphType == 'line')
+      return [-3, 3];
   }).property('graphType', 'streamData'),
 
   xScale: Ember.computed(function () {
@@ -46,10 +48,11 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
   }).property('interval', 'contentWidth'),
 
   yScale: Ember.computed(function () {
+    var yDomain = this.get('yDomain');
     return d3.scale.linear()
-      .domain([0, this.get('maxY')])
+      .domain(yDomain)
       .range([this.get('contentHeight'), 0]);
-  }).property('contentHeight', 'maxY'),
+  }).property('contentHeight', 'yDomain'),
 
   xAxis: Ember.computed(function() {
     var height = this.get('contentHeight');
@@ -62,13 +65,21 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
   }).property('timeTickFormat', 'intervalType', 'xScale'),
 
   yAxis: Ember.computed(function() {
-    var width = this.get('contentWidth');
-    if (this.get('offset') == 'zero') {
+    var width = this.get('contentWidth'),
+        graphType = this.get('graphType');
+    if (graphType == 'stacked') {
       return d3.svg.axis()
         .scale(this.get('yScale'))
         .orient("left")
         .tickSize(-width)
         .tickFormat(d3.format("%"))
+        // .tickSubdivide(1)
+        .ticks(5);
+    } else if (graphType == 'line') {
+      return d3.svg.axis()
+        .scale(this.get('yScale'))
+        .orient("left")
+        .tickSize(-width)
         // .tickSubdivide(1)
         .ticks(5);
     } else { // give a blank axis
@@ -151,6 +162,17 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
       .y1(function(d) { return y(d.y0 + d.y); });
   }).property('xScale', 'yScale', 'interpolateType'),
 
+  line: Ember.computed(function () {
+    var x = this.get('xScale'),
+        y = this.get('yScale'),
+        interpolateType = this.get('interpolateType');
+    return d3.svg.line()
+      .interpolate(interpolateType)
+      .x(function(d) { return x(d.x); })
+      .y(function(d) { return y(d.y); });
+  }).property('xScale', 'yScale', 'interpolateType'),
+
+
   docsByTime: function() {
     return this.get('controller.documents.docsByTime');
   }.property('controller.documents.docsByTime'),
@@ -163,10 +185,14 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
     return docGroupsByInterval.reduce(reduceAdd, reduceSubtract, reduceInitial(topics_n)).all();
   }).property('interval', 'docsByTime', 'controller.topics.n'),
 
+  topicMeans: Ember.computed(function () {
+    return this.get('controller.topics.prevalences');
+  }).property('topicIntervals'),
+
   topicStdDevs: Ember.computed(function () {
     var topicIntervals = this.get('topicIntervals'),
         topics_n = this.get('controller.topics.n'),
-        topicMeans = this.get('controller.topics.prevalences');
+        topicMeans = this.get('topicMeans');
 
     var topicVariances = topicIntervals.reduce(function (a,b) {
       return sumArrays(a, subtractArrays(b.value, topicMeans).map(function(d){ return d*d;}));
@@ -181,12 +207,37 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
     return topicStdDevs;
   }).property('topicIntervals'),
 
-  topicsStandardized: Ember.computed(function () {
-    var topicIntervals = this.get('topicIntervals'),
-        topics_n = this.get('controller.topics.n'),
-        topicMeans = this.get('controller.topics.prevalences'),
-        topicStdDevs = this.get('topicStdDevs');
-  }).property('topicIntervals', 'topicStdDevs'),
+  lineData: Ember.computed(function () {
+    var intervals = this.get('topicIntervals'),
+        topicStdDevs = this.get('topicStdDevs'),
+        topicMeans = this.get('topicMeans'),  
+        docCounts = this.get('docCounts'),
+        topics = this.get('controller.topics'),
+        topics_n = topics.get('n'),
+        activeTopics = this.get('activeTopics'),
+        smooth = this.get('smooth').bind(this);
+
+    if (!activeTopics || activeTopics.length == 0) {
+      return [];
+    } else {
+      var all_layers = new Array(topics_n),
+          len = topics_n;
+      while (len--) {
+        all_layers[len] = intervals.map(
+          function (d,i) { var y = 0.0;
+                           if (docCounts[i] != 0 && topicStdDevs[len] != 0) {
+                             y = d.value[len] / docCounts[i];
+                             y -= topicMeans[len];
+                             y /= topicStdDevs[len];
+                           }
+                           return { x: d.key, topic: len, y: y }; 
+        });
+      }
+
+      all_layers = smooth(all_layers);
+      return all_layers.filter(function (_, i) { return activeTopics.indexOf(i) !== -1; });
+    }    
+  }).property('interval', 'controller.topics', 'controller.topics.selectedIDs', 'topicIntervals', 'docCounts', 'topicStdDevs'),
 
   docCounts: Ember.computed(function () {
     var interval = this.get('interval'),
@@ -201,13 +252,46 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
     return this.get('controller.topics.selectedIDs');
   }).property('controller.topics.selectedIDs'),
 
+  smoothParams: {"type": "mean", "window": 3},
+  smooth: function(layers) {
+    var smoothParams = this.get("smoothParams"),
+        type = smoothParams["type"],
+        windowSize = smoothParams["window"];
+    if (type) {
+      for (var i = 0; i < layers.length; i++) {
+        var d = layers[i],
+            smoothed = [];
+        for (var j = 0, n = d.length; j < n; j++) {
+          var sample = [];
+          for (var k = -windowSize; k <= windowSize; k++) {
+            if (j+k >= 0 && j+k < n) {
+              sample.push(d[j + k].y);        
+            } else {
+              sample.push(d[j].y);
+            }
+          }
+          if (type == "median") {
+            smoothed.push(d3.median(sample));            
+          } else if (type == "mean") {
+            smoothed.push(d3.mean(sample));            
+          }
+        }
+        for (var j = 0, n = d.length; j < n; j++) {
+          d[j].y = smoothed[j];
+        }
+      }    
+    }
+    return layers;
+  },
+
   layers: Ember.computed(function () {
     var intervals = this.get('topicIntervals'),
         stdDevs = this.get('topicStdDevs'),
         docCounts = this.get('docCounts'),
         topics = this.get('controller.topics'),
         topics_n = topics.get('n'),
-        activeTopics = this.get('activeTopics');
+        activeTopics = this.get('activeTopics'),
+        smooth = this.get('smooth').bind(this);
 
     if (!activeTopics || activeTopics.length == 0) {
       return [];
@@ -216,12 +300,12 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
           len = topics_n;
       while (len--) {
         all_layers[len] = intervals.map(
-          function (d,i) { return { x: d.key, 
-                                    topic: len, 
-                                    y: docCounts[i] != 0 ? d.value[len] / docCounts[i] : d.value[len]
-                                  }; 
+          function (d,i) { var y = docCounts[i] != 0 ? d.value[len] / docCounts[i] : 0 ;
+                           return { x: d.key, topic: len, y: y }; 
         });
       }
+
+      all_layers = smooth(all_layers);
       return all_layers.filter(function (_, i) { return activeTopics.indexOf(i) !== -1; });
     }
   }).property('interval', 'controller.topics', 'controller.topics.selectedIDs', 'topicIntervals', 'docCounts'),
@@ -251,7 +335,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
     axesGroup.append("svg:g")
       .attr("class", "y axis")
       .call(this.get('yAxis'));
-  }.observes('maxY'),
+  }.observes('yDomain'),
 
 
   highlightTopic: function (topic) {
@@ -309,8 +393,11 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
   updateGraph: function () {
     var color = Ember.get(App, 'topicColors'),
         area = this.get('area'),
+        line = this.get('line'),
         graphGroup = this.get('graphGroup'),
         streamData = this.get('streamData'),
+        lineData = this.get('lineData'),
+        graphType = this.get('graphType'),
         maskClouds = this.get('maskClouds'),
         defs = this.get('defs'),
         width = this.get('contentWidth'),
@@ -321,49 +408,65 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
 
     if (!graphGroup) return;
     graphGroup.selectAll(".graph").remove();
-    var graphSelection = graphGroup.append("svg:g")
-      .attr("class", "graph")
-      .selectAll("path")
-        .data(streamData);
 
-    graphSelection.enter().append("svg:path")
-        .attr("class", function (d) { return "topic" + d[0].topic;})
-        .attr("d", function(d) { return area(d);})
-        .style("fill", function (d,i) { return color(d[0].topic);})
-        .on("mouseover", function (d) { highlightTopic(d[0].topic);})
-        .on("mouseout", unhighlightTopic)
-        .on("click", getDocsForInterval);
+    if (graphType == 'stream' || graphType == 'stacked') {
+      var graphSelection = graphGroup.append("svg:g")
+        .attr("class", "graph")
+        .selectAll("path")
+          .data(streamData);      
 
-    defs.selectAll("clipPath.topic").remove();
-    defs.selectAll("clipPath.topic")
-      .data(streamData)
-      .enter().append("svg:clipPath")
-        .attr("id", function (d) { return "clipTopic" + d[0].topic;})
-        .attr("class", "topic")
-      .append("svg:path")
-        .attr("d", function(d) { return area(d);});
+      graphSelection.enter().append("svg:path")
+          .attr("class", function (d) { return "topic" + d[0].topic;})
+          .attr("d", function(d) { return area(d);})
+          .style("fill", function (d,i) { return color(d[0].topic);})
+          .on("mouseover", function (d) { highlightTopic(d[0].topic);})
+          .on("mouseout", unhighlightTopic)
+          .on("click", getDocsForInterval);
 
-    d3.selectAll(".cloud").remove();
-    graphSelection.each(function (d) {
-      var topic = d[0].topic;
-      var values = App.topics[topic].topWords.map(function (d) { return d.prob;});
-      var cloudFontSize = d3.scale.linear().clamp(true).domain(d3.extent(values)).range([10,24]);
+      defs.selectAll("clipPath.topic").remove();
+      defs.selectAll("clipPath.topic")
+        .data(streamData)
+        .enter().append("svg:clipPath")
+          .attr("id", function (d) { return "clipTopic" + d[0].topic;})
+          .attr("class", "topic")
+        .append("svg:path")
+          .attr("d", function(d) { return area(d);});
 
-      maskClouds[topic] = new MaskCloud();
-      maskClouds[topic]
-        .size([width,height])
-        .words(App.topics[topic].topWords.filter(function (_,i) { return i < 10;})
-            .map(function(e) {
-              return {text: e.text, size: cloudFontSize(e.prob)};}
+      d3.selectAll(".cloud").remove();
+      graphSelection.each(function (d) {
+        var topic = d[0].topic;
+        var values = App.topics[topic].topWords.map(function (d) { return d.prob;});
+        var cloudFontSize = d3.scale.linear().clamp(true).domain(d3.extent(values)).range([10,36]);
+
+        maskClouds[topic] = new MaskCloud();
+        maskClouds[topic]
+          .size([width,height])
+          .words(App.topics[topic].topWords.filter(function (_,i) { return i < 10;})
+              .map(function(e) {
+                return {text: e.text, size: cloudFontSize(e.prob)};}
+              )
             )
-          )
-        .svg("<path d='"+ area(d) + "'></path>")
-        .clip("#clipTopic"+topic)
-        .parent(graphGroup.select("g.graph")) //path.topic" + i.toString()))
-        .color(color(topic))
-        .start();
-    });
-  }.observes('streamData'),
+          .svg("<path d='"+ area(d) + "'></path>")
+          .clip("#clipTopic"+topic)
+          .parent(graphGroup.select("g.graph")) //path.topic" + i.toString()))
+          .color(color(topic))
+          .start();
+      });
+    } else if (graphType == 'line') {
+      var graphSelection = graphGroup.append("svg:g")
+        .attr("class", "graph")
+        .selectAll("path")
+          .data(lineData);      
+
+      graphSelection.enter().append("svg:path")
+          .attr("class", function (d) { return "topic" + d[0].topic;})
+          .attr("d", function(d) { return line(d);})
+          .style("fill", function (d,i) { return color(d[0].topic);})
+          .on("mouseover", function (d) { highlightTopic(d[0].topic);})
+          .on("mouseout", unhighlightTopic)
+          .on("click", getDocsForInterval);      
+    }
+  }.observes('layers'),
 
   gradientDef: Ember.computed(function() {
     var gradientScale = this.get('gradientScale'),
@@ -411,7 +514,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
         yScale = this.get('yScale');
 
     xScale.domain(this.get('timeDomain'));
-    yScale.domain([0, this.get('maxY')]);
+    yScale.domain(this.get('yDomain'));
 
     this.updateAxes();
     this.updateGraph();
@@ -422,10 +525,9 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
   }
 });
 
-App.TopicGraphStreamView = App.TopicGraphParentView.extend({
-});
-App.TopicGraphStackedView = App.TopicGraphParentView.extend({
-});
+App.TopicGraphStreamView = App.TopicGraphParentView.extend({});
+App.TopicGraphStackedView = App.TopicGraphParentView.extend({});
+App.TopicGraphLineView = App.TopicGraphParentView.extend({});
 
 App.set('cloud', Ember.D3.WordCloudView.create({
   contentBinding: "App.hoverTopicWords",

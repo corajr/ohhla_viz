@@ -73,15 +73,18 @@ App.DocumentsTableController = Ember.Table.TableController.extend({
       }
     });
     titleColumn = Ember.Table.ColumnDefinition.create({
-      columnWidth: "40%",
+      columnWidth: "70%",
       headerCellName: "Title",
       getCellContent: function (row) {
         return localItemLink(row['title'], row['itemID']);
       }
     });
 
-    columnNames = ['author', 'type'];
-    columnSizes = ["20%", "10%"];
+    columnNames = [];
+    // columnNames = ['author'];
+    // columnSizes = ["20%"];
+    // columnNames = ['author', 'type'];
+    // columnSizes = ["20%", "10%"];
     columns = columnNames.map(function(key, index) {
       var name;
       name = key.charAt(0).toUpperCase() + key.slice(1);
@@ -162,7 +165,8 @@ App.TopicGraphController = Ember.ObjectController.extend({
   graphType: "stacked",
   graphTypes: [
     Ember.Object.create({id: 'stacked', label: 'Stacked Area'}),
-    Ember.Object.create({id: 'stream', label: 'Streamgraph'})
+    Ember.Object.create({id: 'stream', label: 'Streamgraph'}),
+    Ember.Object.create({id: 'line', label: 'Line Graph'})
   ],
   documents: null,
   topics: null,
@@ -178,6 +182,7 @@ App.TopicGraphController = Ember.ObjectController.extend({
         name = "";
     if (graphType == "stacked") name = "Stacked Area";
     else if (graphType == "stream") name = "Streamgraph";
+    else if (graphType == "line") name = "Line Graph";
     return name;
   }).property('graphType')
 });
@@ -188,4 +193,23 @@ App.TopicGraphStreamController = App.TopicGraphController.extend({
 
 App.TopicGraphStackedController = App.TopicGraphController.extend({
   graphType: "stacked"
+});
+
+App.TopicGraphLineController = App.TopicGraphController.extend({
+  graphType: "line"
+});
+
+App.TopicSummaryController = Ember.ObjectController.extend({
+  needs: ['documents', 'topics'],
+  documents: null,
+  topics: null,
+  documentsBinding: "controllers.documents",
+  topicsBinding: "controllers.topics",
+  threshold: 0.1,
+  content: Ember.computed(function () {
+    console.log("running ");
+    var threshold = this.get('threshold');
+    var graph = makeCorrelationGraph(threshold);
+    return graph;
+  }).property('threshold', 'topics.@each.visible')  
 });

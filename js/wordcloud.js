@@ -1,7 +1,7 @@
 Ember.D3.WordCloudView = Ember.D3.ChartView.extend({
   width: 'auto',
   height: 150,
-  fontSizePixels: [10,32],
+  fontSizePixels: [10,48],
   fontSize: Ember.computed(function() {
     return d3.scale.log().range(this.get('fontSizePixels'));
   }).property('content', 'fontSizePixels'),
@@ -10,9 +10,10 @@ Ember.D3.WordCloudView = Ember.D3.ChartView.extend({
     var width = this.get('contentWidth'),
         height = this.get('contentHeight'),
         vis = this.get('vis'),
-        color = this.get('color');
-
+        me = this;
     return function(words) {
+      var colorHash = me.get('colorHash'), 
+          labelHash = me.get('labelHash');
       vis.selectAll("g").remove();
       var drawn = vis.append("g")
         .attr("transform", "translate(" + width/2 + "," + height/2 + ")")
@@ -27,26 +28,31 @@ Ember.D3.WordCloudView = Ember.D3.ChartView.extend({
         .append("text")
         .style("font-size", function(d) { return d.size + "px"; })
         .attr("text-anchor", "middle")
-        .style("fill", color)
+        .style("fill", function (d) { return colorHash ? colorHash[d.text] : "#000"; })
         .text(function(d) { return d.text; });
 
-      // drawn
-        // .append("svg:title").text(function (d) { return word_hash[d.text];});
+      drawn
+        .append("svg:title").text(function (d) { return labelHash[d.text];});
     };
-  }).property('vis', 'color'),
-  renderContent: function () { // takes in
+  }).property('vis', 'color', 'colorHash', 'labelHash'),
+  renderContent: function () {
     var word_data = this.get('content'),
         width = this.get('contentWidth'),
         height = this.get('contentHeight'),
         fontSize = this.get('fontSize'),
+        color = this.get('color'),
         draw = this.get('draw');
 
     if (!word_data) return;
-    var values = [];
+    var values = [], colors = {}, labels = {};
     word_data.forEach(function (d) {
       d.value = +d.prob;
       values.push(d.value);
+      colors[d.text] = typeof color === "function" ? color(d.topic) : color;
+      labels[d.text] = d.topic ? App.topics[d.topic].get('label') : d.value;
     });
+    this.set('colorHash', colors);
+    this.set('labelHash', labels);
 
     fontSize.domain(d3.extent(values));
 

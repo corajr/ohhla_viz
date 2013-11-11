@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Paper Machines</title>
-<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/style.css" rel="stylesheet">
 <link href="css/ember-table.css" rel="stylesheet">
 <style type="text/css">
   body {
@@ -17,6 +17,21 @@
   }
   #topics_graph {
   }
+
+  .topiclink, .topiclink:hover {
+    color: inherit;
+  }
+
+  .node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}
+
   .showScroll.lion::-webkit-scrollbar {
     -webkit-appearance: none;
     width: 7px;
@@ -83,8 +98,13 @@
         <h2>{{itemLink title itemID}}</h2>
         <p>{{date date}}</p>
       </div>
+    </div>    
+    <div class="row-fluid">
       <div class="span6">
       {{view App.DocTopicsView }}
+      </div>
+      <div class="span6">
+      {{view Ember.D3.WordCloudView contentBinding="topWords" colorBinding="colors" height=600}}
       </div>
     </div>
   </script>
@@ -127,6 +147,48 @@
     <th {{action sortBy "type"}}>Type</th>
   </script>
 
+  <script type="text/x-handlebars" data-template-name="topic">
+    <div class="row-fluid">
+      <div class="span12">
+        <h1>{{ label }}</h1>
+      </div>
+    </div>  
+    <div class="row-fluid">
+      <div class="span4">
+        {{ view Ember.D3.WordCloudView contentBinding="topWords" color="#d62728"}}
+
+        {{ partial "relatedTopics"}}
+      </div>
+      <div class="span8 presentation-container">
+        {{!--  {{ view App.DocumentsForTopicView }}
+                {{ render "documents" documentsForTopic }} --}}
+
+        {{view Ember.Table.TablesContainer controllerBinding="App.documentsTable"}}
+      </div>
+    </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="topicSummary">
+    <div class="row-fluid">
+      <div class="span12">
+        {{ view BC.RangeInput max="1" step="0.01" valueBinding="controller.threshold"}}
+      </div>     
+      <div class="span12">        
+        {{ view Ember.D3.NetworkView contentBinding="controller.content"}}
+      </div>
+    </div>  
+  </script>
+
+
+  <script type="text/x-handlebars" data-template-name="_relatedTopics">
+    <h3>Related Topics</h3>
+    <ul>
+      {{#each relatedTopic in relatedTopics }}
+      <li>{{#linkTo "topic" relatedTopic }} {{relatedTopic.label}} {{/linkTo}} {{topicCorrelation controller.content relatedTopic}}</li>
+      {{/each}}
+    </ul>
+  </script>
+
   <script type="text/x-handlebars" data-template-name="topics">
     <div id="topics_list" class="showScroll">
       <ul>
@@ -161,10 +223,14 @@
             <ul class="dropdown-menu">
               <li>{{#linkTo topicGraph.stacked topics.selected}}Stacked Area{{/linkTo}}</li>
               <li>{{#linkTo topicGraph.stream topics.selected}}Streamgraph{{/linkTo}}</li>
+              <li>{{#linkTo topicGraph.line topics.selected}}Line Graph{{/linkTo}}</li>
             </ul>
           {{#linkTo "index" classNames=[btn]}}Reset{{/linkTo}}
           <button class="btn">Save</button>
         </div>
+
+        {{view Ember.TextField valueBinding="App.searchQuery"}}
+
       </div>
     </div>
 
@@ -218,7 +284,7 @@
   <script src="js/mask_cloud.js"></script>
   <script src="js/app.js"></script>
   <script src="js/models.js"></script>
-  <script src="js/mallet_dmr_jstorC3-49fa0714.js"></script>
+  <script src="js/mallet_lda_jstorC1-6d86c7af.js"></script>
   <script src="js/data.js"></script>
   <script src="js/controllers.js"></script>
   <script src="js/views.js"></script>
@@ -226,6 +292,7 @@
   <script src="js/ember-d3.js"></script>
   <script src="js/wordcloud.js"></script>
   <script src="js/topicgraph.js"></script>
+  <script src="js/network.js"></script>
   <script type="text/javascript">
   // http://simurai.com/post/8083942390/force-lion-scrollbar
   if (navigator.appVersion.indexOf("10_7") != -1) {
