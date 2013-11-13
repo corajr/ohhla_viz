@@ -223,7 +223,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
         docCounts = this.get('docCounts'),
         topics = this.get('controller.topics'),
         topics_n = topics.get('n'),
-        activeTopics = this.get('activeTopics'),
+        activeTopics = this.get('graphType') == 'horizon' ? App.topics.mapProperty('id'): this.get('activeTopics'),
         smooth = this.get('smooth').bind(this);
 
     if (!activeTopics || activeTopics.length == 0) {
@@ -384,11 +384,16 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
         graphGroup = this.get('graphGroup'),
         mouseX = d3.mouse(graphGroup[0][0])[0],
         time = xScale.invert(mouseX),
-        interval = this.get('interval'),
-        docsByTime = this.get('docsByTime'),
-        timeDomain = this.get('timeDomain'),
         topic = d[0].topic;
 
+    this.getDocsForTime(time, topic);
+  },
+  getDocsForTime: function(time, topic) {
+    var docsByTime = this.get('docsByTime'),
+        interval = this.get('interval'),
+        timeDomain = this.get('timeDomain');
+
+    console.log(time, topic);
     var docs = docsByTime
       .filterRange([interval.floor(time), interval.ceil(time)])
       .top(100);
@@ -418,6 +423,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
         getDocsForInterval = this.get('getDocsForInterval').bind(this);
 
     if (!graphGroup) return;
+    App.set("getDocsForTime", this.get("getDocsForTime").bind(this));
     graphGroup.selectAll(".graph").remove();
 
     if (graphType == 'stream' || graphType == 'stacked') {
@@ -489,14 +495,18 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
         xScale = this.get("xScale"),
         yScale = this.get("yScale").bind(this),
         height = this.get("contentHeight"),
+        get$ = (function (x) { return this.get(x);}).bind(this),
+        graphGroup = this.get("graphGroup"),
         interval = this.get('interval');
     if (!vis || graphType != "line") return;
     svg.on("mousemove", function (e) {
-      var x = d3.event.offsetX;
-      var time = interval.floor(xScale.invert(x));
+      var graphGroup = get$("graphGroup"),
+          popup = get$("popup"),
+          x = d3.mouse(graphGroup[0][0])[0],
+          time = interval.floor(xScale.invert(x));
       var color = Ember.get(App, "topicColors");
-      svg.selectAll(".mouse").remove();
-      svg.selectAll("line.mouse")
+      vis.selectAll(".mouse").remove();
+      vis.selectAll("line.mouse")
         .data([x])
         .enter().append("line")
           .attr("class", "mouse")
@@ -509,19 +519,40 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
       var points = vis.selectAll("path.line").data()
                     .map(function (d) {
                         var matching = d.filter(function (p) { return Math.abs(p.x - time) < 1; }); 
-                        return {y: yScale(matching[0].y), topic: d[0].topic};
+                        return {y: matching[0].y, topic: d[0].topic};
                       });
-      // svg.selectAll("circle.mouse")
-      //   .data(points, function (d) { return d.y;})
-      //   .enter().append("circle")
-      //     .attr("class", "mouse")
-      //     .attr("cx", x)
-      //     .attr("cy", function (d) { return d.y;})
-      //     .attr("r", 5)
-      //     .attr("fill", function (d) { return color(d.topic);});
+      vis.selectAll("circle.mouse")
+        .data(points)
+        .enter().append("circle")
+          .attr("class", "mouse")
+          .attr("cx", x)
+          .attr("cy", function (d) { return yScale(d.y);})
+          .attr("r", 5)
+          .attr("fill", function (d) { return color(d.topic);});
+      var t = points.filter(function(x) { return x;})
+          .map(function (d) { 
+            var topic_name = App.topics[d.topic].get("label");
+            var stdev = d.y.toFixed(3) +"&#x3c3;";
+            return topic_name + ": " + stdev }).join("<br/>");
+      popup(t, 300, 200, 200,100);
     });
-  }.observes("graphType", "vis"),
+  }.observes("graphType", "vis", "graphGroup"),
 
+  popup: function () {
+    var vis = this.get("vis");
+    return function(info, x, y, w, h) {
+      vis.selectAll(".popup_svg").remove(); 
+      var g = vis.append("g")
+        .attr("transform", "translate(" + x + "," + y + ")")
+        .attr("class", "popup_svg");
+      g.append("foreignObject")
+          .attr("width", w)
+          .attr("height", h)
+          .append("xhtml:body")
+            .style("font", "14px 'Helvetica Neue'")
+            .html(info); 
+    };
+  }.property("vis"),
   gradientDef: Ember.computed(function() {
     var gradientScale = this.get('gradientScale'),
         docCounts = this.get('docCounts'),

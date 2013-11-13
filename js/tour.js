@@ -56,22 +56,27 @@ App.ApplicationView = Ember.View.extend({
                 title: "Words in a Topic",
                 onShown: function () {
                     var hoverID = App.topics.slice().sort(function (a,b) { return b.prevalence - a.prevalence; })[0].id;
-                    App.set("hoverTopicID", hoverID);
+                    App.set("clickedTopic", hoverID);
                 },
                 content: "Hovering over an individual topic in the list or on the graph will display the most common words associated with that topic. " +
                          "The vertical axis shows how common each word is, from top (most common) to bottom (most rare). "+
                          "The horizontal axis shows how specific each word is to the topic, from left (most generic) to right (most specific)."
             },
             {
-                element: "#topic_wordcloud",
+                element: ".presentation-container",
                 title: "Showing the docs",
                 placement: "top",
                 onShown: function () {
                     var topID = App.topics.slice().sort(function (a,b) { return b.prevalence - a.prevalence; })[0].id;
                     App.set("clickedTopic", topID);
                     var middleDate = new Date(d3.sum(App.get("timeDomain"))/2);
+                    App.getDocsForTime(middleDate, topID);
                 },
-                content: "Clicking on the topic graph in a certain year (e.g."
+                content: function () {
+                    var middleDate = new Date(d3.sum(App.get("timeDomain"))/2);
+                    return "Clicking on the topic graph in a certain year (e.g. <b>" + middleDate.getFullYear() + "</b>) will fetch documents "+
+                    "with a high proportion of that topic at that time.";
+                }
             }
         ]);
 

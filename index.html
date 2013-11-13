@@ -137,10 +137,9 @@
 
   <script type="text/x-handlebars" data-template-name="topic">
     <div class="row">
-      {{ view App.TopicBoxView contentBinding=controller }}
-    </div>  
-    <div class="row">
       <div class="col-md-4">
+        <br/>
+        {{ view App.TopicBoxView contentBinding=controller }}
         {{ view Ember.D3.WordPlotView contentBinding="topWords" color="#d62728"}}
 
         {{ partial "relatedTopics"}}
@@ -212,6 +211,12 @@
 
   <script type="text/x-handlebars" data-template-name="topicGraph">
     {{#if App.horizon }}
+      <div class="row">
+        <div class="col-md-12">
+          {{outlet}}
+        </div>
+      </div>
+
     {{else}}
     <div class="row">
       <div class="col-md-3">
@@ -251,6 +256,7 @@
   <script src="js/libs/ember-crossfilter.js"></script>
   <script src="js/libs/d3.min.js"></script>
   <script src="js/libs/d3.layout.cloud.js"></script>
+  <script src="js/libs/horizon.js"></script>
   <script src="js/libs/canvg-1.3/rgbcolor.js"></script>
   <script src="js/libs/canvg-1.3/StackBlur.js"></script>
   <script src="js/libs/canvg-1.3/canvg.js"></script>
@@ -269,7 +275,7 @@
   <script src="js/network.js"></script>
   <script src="js/controls.js"></script>
   <script src="js/tour.js"></script>
-  <script src="js/horizon.js"></script>
+  <script src="js/horizoncharts.js"></script>
   <script type="text/javascript">
 
   // http://simurai.com/post/8083942390/force-lion-scrollbar

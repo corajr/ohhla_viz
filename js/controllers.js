@@ -251,6 +251,7 @@ App.AutocompleteController = Ember.Controller.extend({
 App.SaveButtonController = Ember.Controller.extend({
   buttons: [{"text": "Save as SVG"}, 
             {"text": "Save as PDF"},
+            {"text": "Save as HTML"},
             {"text": "Export CSV"}],
 });
 
