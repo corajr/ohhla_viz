@@ -544,14 +544,14 @@ App.set('cloud', Ember.D3.WordCloudView.create({
 
 
 App.TopicPrevalenceIconView = Ember.D3.ChartView.extend({
-  height: 32,
   width: 32,
-  minimumWidth: 32,
+  height: Ember.computed.alias("width"),
+  minimumWidth: Ember.computed.alias("width"),
   margin: {top: 0, right: 0, bottom: 0, left: 0},
   scale: Ember.computed(function () {
    return d3.scale.log()
     .clamp(true)
-    .range([1,15])
+    .range([1,this.get('width')/2])
     .domain([0.005,1]);
   }),
   renderContent: function () {

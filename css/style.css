@@ -106,10 +106,12 @@ input[type="search"] {
     border-radius: 20px;
     -webkit-border-radius: 20px;
     -moz-border-radius: 20px;
-    background: 95% 50% url("../img/search.svg") no-repeat;
+    background: 97% 50% url("../img/search.svg") no-repeat;
     width: 100%;
     padding: 0 0.5em;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
+    height: 24px !important;
+    border: 2px solid gray;    
 }
 
 input[type="search"]:focus {
@@ -125,8 +127,9 @@ input[type="search"]:focus {
   list-style-type: none;
 }
 .suggestions li {
-  text-indent: 2em;
-  font-size: 90%;
+  font-size: 80%;
+  line-height: 16px;
+  vertical-align: top;
 }
 .topicName {
     font-weight: 600 ! important;

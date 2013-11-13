@@ -225,10 +225,14 @@ App.AutocompleteController = Ember.Controller.extend({
         return topic.get("label").match(regex);
       });
       results.sort(function (a,b) { return b.get("prevalence") - a.get("prevalence")});
-      return results.slice(0,5).map(function (d) { return d.get("label") + " (" + d.get("prevalencePercent") + ")";});      
+      return results.slice(0,5);      
     } catch (e) {
       console.error(e);
       return;
     }
   }.property('searchText'), 
 });
+
+// App.AutocompleteResultsController = Ember.ArrayController.extend({
+// });
+

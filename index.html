@@ -134,21 +134,17 @@
   </script>
 
   <script type="text/x-handlebars" data-template-name="autocomplete">
-    {{input type="search" value=searchText placeholder="Search..."}}
-    <ul class="suggestions">
-      {{#each searchResults}}
-        <li style="display: none;">{{this}}</li>
-      {{/each}}
-    </ul>
+    {{input type="search" value=searchText }}
+    {{ view App.AutocompleteResultsView contentBinding=searchResults }}
   </script>
 
   <script type="text/x-handlebars" data-template-name="topics">
-      {{render "autocomplete"}}
+    {{render "autocomplete"}}
     <div id="topics_list" class="showScroll">
     {{!-- {{view Ember.TextField valueBinding="App.searchQuery" type="search"}} --}}
       <ul>
       {{#each topic in controller }}
-        <li {{!--{{bindAttr style=topic.style}} --}}
+        <li 
             {{bindAttr class=topic.isSelected}}
             {{action toggle topic}}>
           {{view App.TopicPrevalenceIconView contentBinding="topic"}}
@@ -188,6 +184,7 @@
   <script src="js/libs/jquery.mousewheel.js"></script>
   <script src="js/libs/handlebars-1.0.0-rc.4.js"></script>
   <script src="js/libs/ember-1.0.0-rc.5.js"></script>
+  <script src="js/libs/ember.jq.animate.js"></script>
   <script src="js/libs/ember-table.js"></script>
   <script src="js/libs/crossfilter.js"></script>
   <script src="js/libs/bootstrap.js"></script>
@@ -211,6 +208,7 @@
   <script src="js/topicgraph.js"></script>
   <script src="js/network.js"></script>
   <script src="js/controls.js"></script>
+  <script src="js/tour.js"></script>
   <script type="text/javascript">
 
   // http://simurai.com/post/8083942390/force-lion-scrollbar

@@ -102,13 +102,48 @@ App.DocumentsForTopicView = Ember.ContainerView.extend({
 
 App.AutocompleteView = Ember.View.extend({
   templateName: 'autocomplete',
-  didInsertElement: function() {
-    this.$().on('DOMNodeInserted', 'li', function(e) {
-      //TODO: ensure that this doesn't always happen; do an enter-exit kind of deal?
-      $(e.target).show('slow');
-    });
-  }
+  // didInsertElement: function() {
+  // }
 });
+
+App.AutocompleteResultsView = Ember.CollectionView.extend(JQ.Animate, {
+  tagName: 'ul',
+  classNames: ['suggestions'],
+  style: "display: none;",
+  hide: function() {
+    this.$().hide('fast');
+  },
+  show: function() {
+    if (this.get("content") && this.get("content").length > 0) {
+      this.$().delay(50).show('fast');      
+    } else {
+      this.hide();
+    }
+  }.observes("content"),
+  mouseLeave: function() {
+    if (this.get("content").filterProperty("isSelected").length > 0) {
+      console.log("hiding");
+      this.hide();
+    }
+  },
+  itemViewClass: Ember.View.extend(Ember.ViewTargetActionSupport, {
+    click: function() { 
+      this.triggerAction({
+        action: "toggle",
+        actionContext: this.get('content')
+      });
+      // this.get("parentView").hide();
+    },
+    topicText: function() { 
+      var topic = this.get('content');
+      return topic.get("abbreviatedLabel"); //+ " (" + topic.get("prevalencePercent") + ")";
+    }.property('content'),
+    template: Ember.Handlebars.compile("{{view App.TopicPrevalenceIconView contentBinding=view.content width=16}} " +
+      "{{view.topicText}}")
+  })
+});
+
+// .map(function (d) { return d.get("label") + " (" + d.get("prevalencePercent") + ")";})
 // App.DocCountsLineView = Ember.D3.ChartView.extend({
 //   width: 'auto',
 //   height: 30,
@@ -130,3 +165,4 @@ App.AutocompleteView = Ember.View.extend({
 // });
 
 // App.set('docCountsView', App.DocCountsLineView.create());
+
