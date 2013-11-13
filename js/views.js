@@ -1,5 +1,6 @@
 // views
 
+
 App.NavbarItemView = Ember.View.extend({
     classNameBindings: ['isActive:active'],
     isActive: function () {
@@ -28,25 +29,32 @@ App.NavbarItemsView = Ember.CollectionView.extend({
       // {{/each}}
       // </ul>
 
-App.TopicsInnerView = Ember.CollectionView.extend({
-  tagName: 'ul',
-  itemViewClass: Ember.View.extend(Ember.ViewTargetActionSupport, {
+App.TopicBoxView = Ember.View.extend(Ember.ViewTargetActionSupport, {
+    classNames: ['topicBox'],
     click: function() { 
       this.triggerAction({
         action: "toggle",
         actionContext: this.get('content')
       });
     },
-    mouseEnter: function() { App.set('hoverTopic', this.get('content.id'));},
-    mouseLeave: function() { App.set('hoverTopic', null);},
-    tagName: 'li',
+    size: 32,
+    mouseEnter: function() { App.set('hoverTopicID', this.get('content.id'));},
+    mouseLeave: function() { App.set('hoverTopicID', null);},
+    tagName: 'div',
     classNameBindings: ['content.isSelected'],
     templateName: "topicBox"
-  })
+});
+
+App.TopicsInnerView = Ember.CollectionView.extend({
+  tagName: 'ul',
+  itemViewClass: App.TopicBoxView.extend({tagName: 'li'})
 });
 
 App.DocTopicView = Ember.View.extend({
-  template: Ember.Handlebars.compile("<td {{bindAttr style='view.content.style'}}>{{#linkTo topic view.content.origTopic classNames='topiclink'}}{{view.content.text}}{{/linkTo}}</td><td>{{percent view.content.prob}}</td>")
+  template: Ember.Handlebars.compile("<td {{bindAttr style='view.content.style'}}>\n" +
+    "{{view App.TopicPrevalenceIconView contentBinding=view.content.origTopic width=16}} " +
+    "{{#linkTo topic view.content.origTopic classNames='topiclink'}}{{view.content.text}}{{/linkTo}}</td>" +  
+    "<td>{{percent view.content.prob}}</td>")
 });
 
 App.DocTopicHeaderView = Ember.View.extend({
@@ -59,17 +67,17 @@ App.DocTopicsView = Ember.CollectionView.extend({
   content: function () {
     var topics = this.get('controller.topics');
     var topicObjs = [];
-    var colors = d3.scale.category20().domain([0,1,2,3,4,6,5,7,8,9,10,11,12,13,14,15,16,17,18,19]);
+    // var colors = d3.scale.category20().domain([0,1,2,3,4,6,5,7,8,9,10,11,12,13,14,15,16,17,18,19]);
     // var topic_idxs = d3.range(topics.length);
     // topic_idxs.sort(function (a,b) { return topics[b] - topics[a];});
 
     for (var i = 0, n = topics.length; i < n; i++) {
       // var idx = topic_idxs[i];
-      // var style = App.topics[i].get('styleInvariant');
-      var style = 'color: ' + colors(i);
+      var style = App.topics[i].get('style');
+      // var style = 'color: ' + colors(i);
       topicObjs.push({'text': App.topics[i].get('label'), 'style': style, 'origTopic': App.topics[i], 'prob': topics[i]});
     }
-    this.set('controller.colors', colors);
+    this.set('controller.colors', App.topicColors);
     topicObjs.sort(function (a,b) {return b.prob - a.prob;});
     return [{}].concat(topicObjs);
   }.property(),
@@ -154,17 +162,11 @@ App.AutocompleteResultsView = Ember.CollectionView.extend(JQ.Animate, {
       this.hide();
     }
   },
-  itemViewClass: Ember.View.extend(Ember.ViewTargetActionSupport, {
-    click: function() { 
-      this.triggerAction({
-        action: "toggle",
-        actionContext: this.get('content')
-      });
-      // this.get("parentView").hide();
-    },
+  itemViewClass: App.TopicBoxView.extend({
+    tagName: 'li',
     topicText: function() { 
       var topic = this.get('content');
-      return topic.get("abbreviatedLabel"); //+ " (" + topic.get("prevalencePercent") + ")";
+      return topic.get("label") + " (" + topic.get("prevalencePercent") + ")";
     }.property('content'),
     template: Ember.Handlebars.compile("{{view App.TopicPrevalenceIconView contentBinding=view.content width=16}} " +
       "{{view.topicText}}")

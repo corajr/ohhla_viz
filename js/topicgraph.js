@@ -1,8 +1,8 @@
 App.TopicGraphParentView = Ember.D3.ChartView.extend({
   width: 'auto',
-  height: 450,
+  height: 420,
   minimumWidth: 600,
-  margin: {top: 20, right: 0, bottom: 30, left: 45},
+  margin: {top: 15, right: 0, bottom: 30, left: 45},
 
   yAxisLabel: Ember.computed(function () {
     var graphType = this.get('controller.graphType');
@@ -143,7 +143,9 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
     } else if (docsByTime) {
       var first_doc = docsByTime.bottom(1)[0],
           last_doc = docsByTime.top(1)[0];
-      return [interval.floor(first_doc.date), interval.ceil(last_doc.date)];
+      var domain = [interval.floor(first_doc.date), interval.ceil(last_doc.date)];
+      App.set("timeDomain", domain);
+      return domain;
     } else {
       return [new Date(), new Date()];
     }
@@ -352,7 +354,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
         defaultOpacity = 1.0;
 
     if (activeTopics.indexOf(topic) == -1) return;
-    App.set('hoverTopic', topic);
+    App.set('hoverTopicID', topic);
     // legend.style("fill-opacity", function (d) { return (d.topic == topic) ? 1.0 : (d.active ? 0.7 : 0.3);})
     // for (i in graph) {
     var series = graphGroup.selectAll("path");
@@ -365,7 +367,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
         defaultOpacity = 1.0,
         filled = true;
 
-    App.set('hoverTopic', null);
+    App.set('hoverTopicID', null);
     // return;
     // legend.style("fill-opacity", function (d) { return (d.active) ? 1.0 : 0.3;})
     // for (i in graph) {
@@ -425,7 +427,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
           .data(streamData);      
 
       graphSelection.enter().append("svg:path")
-          .attr("class", function (d) { return "topic" + d[0].topic;})
+          .attr("class", function (d) { return "area topic" + d[0].topic;})
           .attr("d", function(d) { return area(d);})
           .style("fill", function (d,i) { return color(d[0].topic);})
           .on("mouseover", function (d) { highlightTopic(d[0].topic);})
@@ -470,7 +472,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
           .data(lineData);      
 
       graphSelection.enter().append("svg:path")
-          .attr("class", function (d) { return "topic" + d[0].topic;})
+          .attr("class", function (d) { return "line topic" + d[0].topic;})
           .attr("d", function(d) { return line(d);})
           .style("stroke", function (d,i) { return color(d[0].topic);})
           .style("fill", "none")
@@ -479,6 +481,46 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
           .on("click", getDocsForInterval);      
     }
   }.observes('layers'),
+
+  lineMouse: function() {
+    var graphType = this.get("graphType"),
+        svg = this.get("svg"),
+        vis = this.get("vis"),
+        xScale = this.get("xScale"),
+        yScale = this.get("yScale").bind(this),
+        height = this.get("contentHeight"),
+        interval = this.get('interval');
+    if (!vis || graphType != "line") return;
+    svg.on("mousemove", function (e) {
+      var x = d3.event.offsetX;
+      var time = interval.floor(xScale.invert(x));
+      var color = Ember.get(App, "topicColors");
+      svg.selectAll(".mouse").remove();
+      svg.selectAll("line.mouse")
+        .data([x])
+        .enter().append("line")
+          .attr("class", "mouse")
+          .style("stroke", "lightgray")
+          .attr("x1", function (d) { return d; })
+          .attr("x2", function (d) { return d; })
+          .attr("y1", 0)
+          .attr("y2", height);
+
+      var points = vis.selectAll("path.line").data()
+                    .map(function (d) {
+                        var matching = d.filter(function (p) { return Math.abs(p.x - time) < 1; }); 
+                        return {y: yScale(matching[0].y), topic: d[0].topic};
+                      });
+      // svg.selectAll("circle.mouse")
+      //   .data(points, function (d) { return d.y;})
+      //   .enter().append("circle")
+      //     .attr("class", "mouse")
+      //     .attr("cx", x)
+      //     .attr("cy", function (d) { return d.y;})
+      //     .attr("r", 5)
+      //     .attr("fill", function (d) { return color(d.topic);});
+    });
+  }.observes("graphType", "vis"),
 
   gradientDef: Ember.computed(function() {
     var gradientScale = this.get('gradientScale'),
@@ -541,13 +583,24 @@ App.TopicGraphStreamView = App.TopicGraphParentView.extend({});
 App.TopicGraphStackedView = App.TopicGraphParentView.extend({});
 App.TopicGraphLineView = App.TopicGraphParentView.extend({});
 
-App.set('cloud', Ember.D3.WordCloudView.create({
-  contentBinding: "App.hoverTopicWords",
-  colorBinding: "App.hoverTopicColor"
-}));
+// App.set('cloud', Ember.D3.WordCloudView.create({
+//   contentBinding: "App.hoverTopicWords",
+//   colorBinding: "App.hoverTopicColor"
+// }));
 
+// App.set('cloud', Ember.D3.WordPlotView.create({
+//   contentBinding: "App.hoverTopicWords",
+//   colorBinding: "App.hoverTopicColor"
+// }));
 
-App.TopicPrevalenceIconView = Ember.D3.ChartView.extend({
+App.TopicPrevalenceIconView = Ember.D3.ChartView.extend(Ember.ViewTargetActionSupport, {
+  click: function() { 
+    this.triggerAction({
+      action: "toggle",
+      actionContext: this.get('content'),
+      target: App
+    });
+  },
   width: 32,
   height: Ember.computed.alias("width"),
   minimumWidth: Ember.computed.alias("width"),
@@ -562,10 +615,12 @@ App.TopicPrevalenceIconView = Ember.D3.ChartView.extend({
     var prevalence = this.get('content.prevalence'),
         color = this.get('content.color'),
         isSelected = this.get('content.isSelected'),
+        svg = this.get('svg'),
         vis = this.get('vis'),
         width = this.get('contentWidth'),
         scale = this.get('scale');
 
+    svg.attr("class", "topicBadge");
     vis.selectAll("*").remove();
     var g = vis.append("g")
       .attr("transform", "translate(" + width/2 + "," + width/2 + ")")

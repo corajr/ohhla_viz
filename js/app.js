@@ -4,13 +4,18 @@ window.App = Ember.Application.create({
 
 App.collectionName = "History of Ethnomusicology";
 
-App.topicColors = d3.scale.category20().domain([0,1,2,3,4,6,5,7,8,9,10,11,12,13,14,15,16,17,18,19]); //d3.scale.category10().domain(d3.range(10));
-
+App.topicColors = d3.scale.category10();//.domain([0,1,2,3,4,6,5,7,8,9,10,11,12,13,14,15,16,17,18,19]); //d3.scale.category10().domain(d3.range(10));
+//.domain(d3.range(0,20,2).concat(d3.range(1,20,2)))
 // App.timeDomain = [new Date(1820,0,0), new Date(2000,0,0)];
 App.reopen({
+  hoverTopic: function () {
+    var hoverTopicID = this.get('hoverTopicID'),
+        clickedTopicID = this.get('clickedTopic'),
+        hoverTopic = clickedTopicID ? App.topics[clickedTopicID] : (hoverTopicID ? App.topics[hoverTopicID] : null);
+    return hoverTopic;
+  }.property('hoverTopicID', 'clickedTopic').volatile(),
   hoverTopicWords: Ember.computed(function () {
-    var hoverTopicID = this.get('hoverTopic'),
-        hoverTopic = hoverTopicID ? App.topics[hoverTopicID] : null;
+    var hoverTopic = this.get('hoverTopic');
     if (hoverTopic) {
       var ret = hoverTopic.get('topWords');
       ret.sort(function (a,b) { return b.prob - a.prob;});
@@ -20,8 +25,7 @@ App.reopen({
     }
   }).property('hoverTopic').volatile(),
   hoverTopicColor: Ember.computed(function () {
-    var hoverTopicID = this.get('hoverTopic'),
-        hoverTopic = hoverTopicID ? App.topics[hoverTopicID] : null;
+    var hoverTopic = this.get('hoverTopic');
     if (hoverTopic) {
       return hoverTopic.get('color');
     } else {
@@ -31,7 +35,7 @@ App.reopen({
   showDocs: function (docs, topic) {
     App.set('selectedDocs', docs);
     App.set('clickedTopic', topic);
-    App.set('clickedTopicLabel', App.topics[topic].get('label') + " (% of document)");
+    App.set('clickedTopicLabel', App.topics[topic] ? App.topics[topic].get('label') + " (% of document)" : null);
   }
 });
 

@@ -6,6 +6,8 @@ App.Router.map(function() {
     this.route('stream', { path: '/stream/:selected' });
     this.route('line');
     this.route('line', { path: '/line/:selected' });
+    this.route('horizon');
+    this.route('horizon', { path: '/horizon/:selected' });
   });
   this.route('document', {path: '/document/:itemID'});
   this.route('topic', {path: '/topic/:topicID'});
@@ -14,6 +16,15 @@ App.Router.map(function() {
   this.route('about');
 });
 
+App.ApplicationRoute = Ember.Route.extend({
+  events: {
+    toggle: function(topic) {
+        var topics = this.controllerFor('topics');
+
+        topic.toggleProperty('isSelected');
+      }
+  }
+});
 App.IndexRoute = Ember.Route.extend({
   redirect: function() {
     this.controllerFor('topics').deselectAll();
@@ -69,6 +80,9 @@ App.TopicGraphRoute = Ember.Route.extend({
             topic.toggleProperty('isSelected');
             this.transitionTo('topicGraph.' + this.get('graphType'), topics.get('selected'));
         },
+        close: function() {
+          App.showDocs();
+        },
     }
 });
 
@@ -88,4 +102,8 @@ App.TopicGraphStreamRoute = App.TopicGraphRoute.extend({
 
 App.TopicGraphLineRoute = App.TopicGraphRoute.extend({
   graphType: 'line'
+});
+
+App.TopicGraphHorizonRoute = App.TopicGraphRoute.extend({
+  graphType: 'horizon'
 });

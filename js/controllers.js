@@ -13,6 +13,16 @@ App.ApplicationController = Ember.Controller.extend({
   }).property('App.topics', 'topicPrevalence'),
   updatePath: function() {
     App.set("currentPath", this.currentPath);
+    if (this.currentPath != "topicGraph.stacked") {
+      $("#back").show();
+    } else {
+      $("#back").hide();
+    }
+    if (this.currentPath == "topicGraph.horizon") {
+      App.set('horizon', true);
+    } else {
+      App.set('horizon', false);
+    }
     // window.document.title = this.controllerFor(this.currentPath).get('title');
   }.observes('currentPath'),
 });
@@ -55,14 +65,14 @@ App.DocumentsTableController = Ember.Table.TableController.extend({
   columns: Ember.computed(function () {
     var columns, dateColumn, titleColumn, activePercentColumn, columnNames, columnSizes;
     dateColumn = Ember.Table.ColumnDefinition.create({
-      columnWidth: "15%",
+      columnWidth: "10%",
       headerCellName: "Date",
       getCellContent: function (row) {
         return dateToStr(row['date']);
       }
     });
     activePercentColumn = Ember.Table.ColumnDefinition.create({
-      columnWidth: "15%",
+      columnWidth: "30%",
       headerCellNameBinding: "App.clickedTopicLabel",
       getCellContent: function (row) {
         var topic = App.get('clickedTopic');
@@ -73,7 +83,7 @@ App.DocumentsTableController = Ember.Table.TableController.extend({
       }
     });
     titleColumn = Ember.Table.ColumnDefinition.create({
-      columnWidth: "70%",
+      columnWidth: "60%",
       headerCellName: "Title",
       getCellContent: function (row) {
         return localItemLink(row['title'], row['itemID']);
@@ -166,7 +176,8 @@ App.TopicGraphController = Ember.ObjectController.extend({
   graphTypes: [
     Ember.Object.create({id: 'stacked', label: 'Stacked Area'}),
     Ember.Object.create({id: 'stream', label: 'Streamgraph'}),
-    Ember.Object.create({id: 'line', label: 'Line Graph'})
+    Ember.Object.create({id: 'line', label: 'Line Graph'}),
+    Ember.Object.create({id: 'horizon', label: 'Horizon'})
   ],
   documents: null,
   topics: null,
@@ -183,6 +194,7 @@ App.TopicGraphController = Ember.ObjectController.extend({
     if (graphType == "stacked") name = "Stacked Area";
     else if (graphType == "stream") name = "Streamgraph";
     else if (graphType == "line") name = "Line Graph";
+    else if (graphType == "horizon") name = "Horizon";
     return name;
   }).property('graphType')
 });
@@ -199,12 +211,14 @@ App.TopicGraphLineController = App.TopicGraphController.extend({
   graphType: "line"
 });
 
+App.TopicGraphHorizonController = App.TopicGraphController.extend({
+  graphType: "horizon"
+});
+
 App.TopicSummaryController = Ember.ObjectController.extend({
   needs: ['documents', 'topics'],
-  documents: null,
-  topics: null,
-  documentsBinding: "controllers.documents",
-  topicsBinding: "controllers.topics",
+  documents: Ember.computed.alias("controllers.documents"),
+  topics:  Ember.computed.alias("controllers.topics"),
   threshold: 0.1,
   content: Ember.computed(function () {
     console.log("running ");
@@ -233,6 +247,18 @@ App.AutocompleteController = Ember.Controller.extend({
   }.property('searchText'), 
 });
 
+
+App.SaveButtonController = Ember.Controller.extend({
+  buttons: [{"text": "Save as SVG"}, 
+            {"text": "Save as PDF"},
+            {"text": "Export CSV"}],
+});
+
+App.ConfigButtonController = Ember.Controller.extend({
+  needs: ['topics'],
+  topics: Ember.computed.alias("controllers.topics"),
+  template: Ember.Handlebars.compile("")
+});
 // App.AutocompleteResultsController = Ember.ArrayController.extend({
 // });
 

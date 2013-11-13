@@ -24,13 +24,10 @@
     -->
 
     <div class="container">
-      <div class="control-icons">
-        <a id="download"></a>
-        <a id="config"></a>
-        <a id="help"></a>
-      </div>
+      {{ partial "controlIcons" }}
 
-      <h2>{{ App.collectionName }}</h2>
+      <a id="back" href="javascript:history.back();"></a>
+      <h2 id="headline"><a href="#">{{ App.collectionName }}</a></h2>
     </div>
 
     <div class="container">
@@ -38,10 +35,55 @@
     </div>
   </script>
 
+  <script type="text/x-handlebars" data-template-name="_controlIcons">
+    <div class="control-icons">
+        <a id="save"></a>
+        <a id="config"></a>
+        <a id="help"></a>
+      </div>
+      <div style="display: none;">
+        <div id="saveButton">
+          {{ render "saveButton" }}
+        </div>
+        <div id="configButton">
+          {{ render "configButton" }}
+        </div>
+        <div id="helpButton">
+          {{ render "helpButton" }}
+        </div>
+    </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="saveButton">
+    <div class='btn-group-vertical'>
+      {{#each b in controller.buttons}}
+        <button type='button' class='btn btn-default'>{{b.text}}</button>
+      {{/each}}
+    </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="configButton">
+    <div class="config">
+        {{#linkTo topicGraph.stacked topics.selected}}<span class="col1">Stacked Area</span> <img src="img/stacked.png"/>{{/linkTo}}
+        <div style="clear: both;"></div>
+        {{#linkTo topicGraph.line topics.selected}}<span class="col1" id="line">Line Graph</span> <img src="img/line.png"/>{{/linkTo}}
+        <div style="clear: both;"></div>
+        {{#linkTo topicGraph.horizon topics.selected}}<span class="col1">Horizon Charts</span> <img src="img/horizon.png"/>{{/linkTo}}
+    </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="helpButton">
+    <div class='btn-group-vertical'>
+      {{#each b in controller.buttons}}
+        <button type='button' class='btn btn-default'>{{b.text}}</button>
+      {{/each}}
+    </div>
+  </script>
+
   <script type="text/x-handlebars" data-template-name="document">
     <div class="row">
       <div class="col-md-12">
-        <h2>{{itemLink title itemID}}</h2>
+        <h4>{{itemLink title itemID}}</h4>
         <p>{{date date}}</p>
       </div>
     </div>    
@@ -95,11 +137,11 @@
 
   <script type="text/x-handlebars" data-template-name="topic">
     <div class="row">
-      <h1>{{ label }}</h1>
+      {{ view App.TopicBoxView contentBinding=controller }}
     </div>  
     <div class="row">
       <div class="col-md-4">
-        {{ view Ember.D3.WordCloudView contentBinding="topWords" color="#d62728"}}
+        {{ view Ember.D3.WordPlotView contentBinding="topWords" color="#d62728"}}
 
         {{ partial "relatedTopics"}}
       </div>
@@ -123,9 +165,8 @@
     </div>  
   </script>
 
-
   <script type="text/x-handlebars" data-template-name="_relatedTopics">
-    <h3>Related Topics</h3>
+    <h4>Related Topics</h4>
     <ul>
       {{#each relatedTopic in relatedTopics }}
       <li>{{#linkTo "topic" relatedTopic }} {{relatedTopic.label}} {{/linkTo}} {{topicCorrelation controller.content relatedTopic}}</li>
@@ -140,23 +181,40 @@
 
   <script type="text/x-handlebars" data-template-name="topics">
     {{render "autocomplete"}}
-    <div id="topics_list" class="showScroll">
-      {{ view App.TopicsInnerView contentBinding=controller }}
+    <div id="topics_sidebar" class="showScroll">
+      <div id="topics_list">
+        <div id="uparrow"></div>
+        {{ view App.TopicsInnerView contentBinding=controller }}
+        <div id="downarrow">
+<!--        <img src="img/downarrow.svg"/>-->
+        </div>
+      </div>
     </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="_hoverTopic">
     <div id="topic_wordcloud">
-      {{view Ember.ContainerView currentViewBinding="App.cloud"}}
+    {{#if App.hoverTopic }}
+      {{#if App.clickedTopic }}
+        <button type="button" class="close" aria-hidden="true" style="float: right;" {{action close}}>&times;</button>
+      {{/if}}
+      {{ view App.TopicBoxView contentBinding=App.hoverTopic}}
+      {{ view Ember.D3.WordPlotView contentBinding=App.hoverTopicWords colorBinding=App.hoverTopicColor }}
+    {{/if}}
     </div>
   </script>
 
   <script type="text/x-handlebars" data-template-name="topicBox">
     {{view App.TopicPrevalenceIconView contentBinding=view.content}}
-    <div class="topicName">{{view.content.abbreviatedLabel}}</div>
+    <div class="topicName">{{#linkTo topic view.content classNames='topiclink'}}{{view.content.abbreviatedLabel}}{{/linkTo}}</div>
     <div class="topicPercentage">{{view.content.prevalencePercent}} of corpus</div>
   </script>
 
   <script type="text/x-handlebars" data-template-name="topicGraph">
+    {{#if App.horizon }}
+    {{else}}
     <div class="row">
-      <div class="col-md-3">        
+      <div class="col-md-3">
         {{ render "topics" }}
       </div>
       <div class="col-md-9">
@@ -166,10 +224,16 @@
         </div>
       </div>
     </div>
+    {{/if}}
 
     <div class="row">
-      <div class="col-md-12 presentation-container">
-      {{view Ember.Table.TablesContainer controllerBinding="App.documentsTable"}}
+      <div class="col-md-3">
+        {{ partial "hoverTopic" }}
+      </div>
+      <div class="col-md-9 presentation-container">
+        {{#if App.clickedTopic }}
+          {{view Ember.Table.TablesContainer controllerBinding="App.documentsTable"}}
+        {{/if}}
       </div>
     </div>
   </script>
@@ -200,10 +264,12 @@
   <script src="js/router.js"></script>
   <script src="js/ember-d3.js"></script>
   <script src="js/wordcloud.js"></script>
+  <script src="js/wordplot.js"></script>
   <script src="js/topicgraph.js"></script>
   <script src="js/network.js"></script>
   <script src="js/controls.js"></script>
   <script src="js/tour.js"></script>
+  <script src="js/horizon.js"></script>
   <script type="text/javascript">
 
   // http://simurai.com/post/8083942390/force-lion-scrollbar

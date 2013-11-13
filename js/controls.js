@@ -1,45 +1,21 @@
 $(function () {
     var defaultPopover = {
       placement: "bottom",
+      trigger: "hover",
+      delay: {show: 100, hide: 1000},
       html: true
     };
 
     var toolbarButtons = {
-        "#download": {
-            "title": "Save", 
-            "content": function() {
-                var str = "<div class='btn-group-vertical'>";
-                var template = Handlebars.compile("<button type='button' class='btn btn-default'>{{text}}</button>\n");
-                var buttons = [
-                    ["Save as SVG", false],
-                    ["Save as PDF", false],
-                    ["Export CSV", false],
-                ];
-                buttons.forEach(function (d) { 
-                    str += template({text: d[0]});
-                });
-                str += "</div>";
-
-                return str;
-            }
-        },
-        "#config": {
-            "title": "Options",
-            "content": function () {
-                var str = "<div>Graph Type";
-                return str;
-            }
-        },
-        "#help": {
-            "title": "Help",
-            "content": "blah"
-        }
+        "#save": "Save",
+        "#config": "Options",
+        "#help": "Help"
     };
-
-    ["#download", "#config", "#help"].forEach(function (d) {
+    ["#save", "#config"].forEach(function (d) { //"#help"
         $(d).popover($.extend({
-          title: toolbarButtons[d].title,
-          content: (typeof toolbarButtons[d].content == "function") ? toolbarButtons[d].content() : toolbarButtons[d].content
+          title: toolbarButtons[d],
+          content: $(d+"Button").html(),
+          container: d
         }, defaultPopover));
 
         $(d).on('show.bs.popover', function () {
