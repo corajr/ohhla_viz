@@ -141,22 +141,17 @@
   <script type="text/x-handlebars" data-template-name="topics">
     {{render "autocomplete"}}
     <div id="topics_list" class="showScroll">
-    {{!-- {{view Ember.TextField valueBinding="App.searchQuery" type="search"}} --}}
-      <ul>
-      {{#each topic in controller }}
-        <li 
-            {{bindAttr class=topic.isSelected}}
-            {{action toggle topic}}>
-          {{view App.TopicPrevalenceIconView contentBinding="topic"}}
-          <div class="topicName">{{topic.abbreviatedLabel}}</div>
-          <div class="topicPercentage">{{topic.prevalencePercent}} of corpus</div>
-        </li>
-      {{/each}}
-      </ul>
+      {{ view App.TopicsInnerView contentBinding=controller }}
     </div>
     <div id="topic_wordcloud">
-    {{view Ember.ContainerView currentViewBinding="App.cloud"}}
+      {{view Ember.ContainerView currentViewBinding="App.cloud"}}
     </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="topicBox">
+    {{view App.TopicPrevalenceIconView contentBinding=view.content}}
+    <div class="topicName">{{view.content.abbreviatedLabel}}</div>
+    <div class="topicPercentage">{{view.content.prevalencePercent}} of corpus</div>
   </script>
 
   <script type="text/x-handlebars" data-template-name="topicGraph">

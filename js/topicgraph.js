@@ -98,7 +98,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
 
   gradientScale: Ember.computed(function () {
     var docCounts = this.get('docCounts');
-    console.log(d3.max(docCounts));
+    // console.log(d3.max(docCounts));
     return d3.scale.pow()
       .exponent(0.1)
       .clamp(true)
@@ -397,6 +397,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
     App.showDocs(docs, topic);
   },
   maskClouds: {},
+  maskCloudsActive: false,
   updateGraph: function () {
     var color = Ember.get(App, 'topicColors'),
         area = this.get('area'),
@@ -405,6 +406,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
         streamData = this.get('streamData'),
         lineData = this.get('lineData'),
         graphType = this.get('graphType'),
+        maskCloudsActive = this.get('maskCloudsActive'),
         maskClouds = this.get('maskClouds'),
         defs = this.get('defs'),
         width = this.get('contentWidth'),
@@ -439,26 +441,28 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
         .append("svg:path")
           .attr("d", function(d) { return area(d);});
 
-      d3.selectAll(".cloud").remove();
-      graphSelection.each(function (d) {
-        var topic = d[0].topic;
-        var values = App.topics[topic].topWords.map(function (d) { return d.prob;});
-        var cloudFontSize = d3.scale.linear().clamp(true).domain(d3.extent(values)).range([8,24]);
+      if (maskCloudsActive) {
+        d3.selectAll(".cloud").remove();
+        graphSelection.each(function (d) {
+          var topic = d[0].topic;
+          var values = App.topics[topic].topWords.map(function (d) { return d.prob;});
+          var cloudFontSize = d3.scale.linear().clamp(true).domain(d3.extent(values)).range([8,24]);
 
-        maskClouds[topic] = new MaskCloud();
-        maskClouds[topic]
-          .size([width,height])
-          .words(App.topics[topic].topWords.filter(function (_,i) { return i < 10;})
-              .map(function(e) {
-                return {text: e.text, size: cloudFontSize(e.prob)};}
+          maskClouds[topic] = new MaskCloud();
+          maskClouds[topic]
+            .size([width,height])
+            .words(App.topics[topic].topWords.filter(function (_,i) { return i < 10;})
+                .map(function(e) {
+                  return {text: e.text, size: cloudFontSize(e.prob)};}
+                )
               )
-            )
-          .svg("<path d='"+ area(d) + "'></path>")
-          .clip("#clipTopic"+topic)
-          .parent(graphGroup.select("g.graph")) //path.topic" + i.toString()))
-          .color(color(topic))
-          .start();
-      });
+            .svg("<path d='"+ area(d) + "'></path>")
+            .clip("#clipTopic"+topic)
+            .parent(graphGroup.select("g.graph")) //path.topic" + i.toString()))
+            .color(color(topic))
+            .start();
+        });        
+      }
     } else if (graphType == 'line') {
       var graphSelection = graphGroup.append("svg:g")
         .attr("class", "graph")

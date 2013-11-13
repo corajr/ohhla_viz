@@ -17,6 +17,33 @@ App.NavbarItemsView = Ember.CollectionView.extend({
   classNames: ['nav'],
   itemViewClass: App.NavbarItemView
 });
+      // <ul>
+      // {{#each topic in controller }}
+        // <li {{bindAttr class=topic.isSelected}}
+        //     {{action toggle topic}}>
+        //   {{view App.TopicPrevalenceIconView contentBinding="topic"}}
+        //   <div class="topicName">{{topic.abbreviatedLabel}}</div>
+        //   <div class="topicPercentage">{{topic.prevalencePercent}} of corpus</div>
+        // </li>
+      // {{/each}}
+      // </ul>
+
+App.TopicsInnerView = Ember.CollectionView.extend({
+  tagName: 'ul',
+  itemViewClass: Ember.View.extend(Ember.ViewTargetActionSupport, {
+    click: function() { 
+      this.triggerAction({
+        action: "toggle",
+        actionContext: this.get('content')
+      });
+    },
+    mouseEnter: function() { App.set('hoverTopic', this.get('content.id'));},
+    mouseLeave: function() { App.set('hoverTopic', null);},
+    tagName: 'li',
+    classNameBindings: ['content.isSelected'],
+    templateName: "topicBox"
+  })
+});
 
 App.DocTopicView = Ember.View.extend({
   template: Ember.Handlebars.compile("<td {{bindAttr style='view.content.style'}}>{{#linkTo topic view.content.origTopic classNames='topiclink'}}{{view.content.text}}{{/linkTo}}</td><td>{{percent view.content.prob}}</td>")
@@ -109,20 +136,21 @@ App.AutocompleteView = Ember.View.extend({
 App.AutocompleteResultsView = Ember.CollectionView.extend(JQ.Animate, {
   tagName: 'ul',
   classNames: ['suggestions'],
-  style: "display: none;",
   hide: function() {
     this.$().hide('fast');
   },
   show: function() {
     if (this.get("content") && this.get("content").length > 0) {
-      this.$().delay(50).show('fast');      
+      this.$().show('fast');      
     } else {
       this.hide();
     }
   }.observes("content"),
+  didInsertElement: function() {
+    this.$().hide();
+  },
   mouseLeave: function() {
     if (this.get("content").filterProperty("isSelected").length > 0) {
-      console.log("hiding");
       this.hide();
     }
   },

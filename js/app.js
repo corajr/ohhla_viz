@@ -25,7 +25,7 @@ App.reopen({
     if (hoverTopic) {
       return hoverTopic.get('color');
     } else {
-      return "#000";
+      return "#FFF";
     }
   }).property('hoverTopic').volatile(),
   showDocs: function (docs, topic) {
