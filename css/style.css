@@ -101,8 +101,12 @@ html, body {
   margin-top: 15px;
 }
   .topiclink, .topiclink:hover {
-    color: inherit;
+    color: lightgray;
   }
+  .is-selected .topiclink, .is-selected .topiclink:hover {
+    color: black;
+  }
+
 
   .node {
   stroke: #fff;

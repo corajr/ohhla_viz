@@ -1,7 +1,7 @@
 $(function () {
     var defaultPopover = {
       placement: "bottom",
-      trigger: "hover",
+      trigger: "click",
       delay: {show: 100, hide: 1000},
       html: true
     };

@@ -89,12 +89,21 @@
     </div>    
     <div class="row">
       <div class="col-md-6">
-      {{view App.DocTopicsView }}
+        {{view App.DocTopicsView }}
       </div>
       <div class="col-md-6">
-      {{view Ember.D3.WordCloudView contentBinding="topWords" colorBinding="colors" height=600}}
+        {{view Ember.D3.WordPlotView contentBinding="topWords" colorBinding="colors" labelFontSize=18 fontSize=24 maxWords=20 height=600}}
       </div>
     </div>
+  </script>
+  <script type="text/x-handlebars" data-template-name="docTopic">
+    <td {{bindAttr style='view.content.style'}}
+        {{bindAttr class=view.content.origTopic.isSelected}}
+        {{action toggle view.content.origTopic}}>
+      {{view App.TopicPrevalenceIconView contentBinding=view.content.origTopic width=16}}
+      {{#linkTo topic view.content.origTopic classNames='topiclink'}}{{view.content.text}}{{/linkTo}}
+    </td>
+    <td>{{percent view.content.prob}}</td>
   </script>
 
   <script type="text/x-handlebars" data-template-name="documents">

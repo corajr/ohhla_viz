@@ -51,10 +51,7 @@ App.TopicsInnerView = Ember.CollectionView.extend({
 });
 
 App.DocTopicView = Ember.View.extend({
-  template: Ember.Handlebars.compile("<td {{bindAttr style='view.content.style'}}>\n" +
-    "{{view App.TopicPrevalenceIconView contentBinding=view.content.origTopic width=16}} " +
-    "{{#linkTo topic view.content.origTopic classNames='topiclink'}}{{view.content.text}}{{/linkTo}}</td>" +  
-    "<td>{{percent view.content.prob}}</td>")
+  templateName: "docTopic"
 });
 
 App.DocTopicHeaderView = Ember.View.extend({

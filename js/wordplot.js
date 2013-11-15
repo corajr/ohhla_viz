@@ -3,7 +3,9 @@ Ember.D3.WordPlotView = Ember.D3.ChartView.extend({
   height: 150,
   color: "#000",
   margin: {top: 10, right: 10, bottom: 25, left: 10},
-
+  labelFontSize: 12,
+  fontSize: 11,
+  maxWords: 10,
   xAxisLabel: "Specificity",
   yAxisLabel: "Word Rank",
   xScale: function () {
@@ -14,9 +16,9 @@ Ember.D3.WordPlotView = Ember.D3.ChartView.extend({
   yScale: function () {
     var height = this.get('contentHeight');
     return d3.scale.linear()
-      .domain([0,9])
+      .domain([0,this.get("maxWords")-1])
       .range([0, height]);
-  }.property('contentHeight'),
+  }.property('contentHeight', 'maxWords'),
   xAxis: function() {
     return d3.svg.axis()
               .scale(this.get('xScale'))
@@ -37,12 +39,15 @@ Ember.D3.WordPlotView = Ember.D3.ChartView.extend({
         xAxis = this.get('xAxis'),
         yAxis = this.get('yAxis'),
         height = this.get('contentHeight'),
+        fontSize = this.get("fontSize"),
+        labelFontSize = this.get("labelFontSize"),
+        maxWords = this.get("maxWords"),
         color = this.get('color');
 
     if (!word_data || !vis) return;
 
     try {
-      word_data = word_data.slice(0,10);
+      word_data = word_data.slice(0,maxWords);
       vis.selectAll("g.word").remove();    
       word_data.sort(function (a,b) { return b.prob - a.prob;});
       word_data.forEach(function (d,i) {
@@ -52,7 +57,7 @@ Ember.D3.WordPlotView = Ember.D3.ChartView.extend({
 
       svg.selectAll("text")
         .style("font-weight", 200)
-        .style("font-size", 12);
+        .style("font-size", labelFontSize);
       var word_groups = vis.selectAll("g.word")
         .data(word_data).enter().append("g")
           .attr("class", "word")
@@ -63,7 +68,7 @@ Ember.D3.WordPlotView = Ember.D3.ChartView.extend({
 
       word_groups.append("text")
         .style("text-anchor", "start")
-        .style("font-size", '11px')
+        .style("font-size", fontSize)
         .style("font-weight", "200")
         .text(function (d) { return d.text; });
       } catch (e) { console.error(e);}

@@ -50,6 +50,7 @@ App.TopicGraphHorizonView = App.TopicGraphParentView.extend({
     yAxisLabel: "",
     axesGroup: null,
     height: 500,
+    margin: {top: 10, right: 10, bottom: 10, left: 10},
 
     renderContent: function () {
         var vis = this.get('vis');
@@ -77,7 +78,7 @@ App.TopicGraphHorizonView = App.TopicGraphParentView.extend({
     var strip_height = 12;
     var topics = App.topics.mapProperty("label");
 
-    var text_margin = 120;
+    var text_margin = 140;
     var rectGroup = vis.append("g");
     var textGroup = vis.append("g");
 
@@ -114,13 +115,34 @@ App.TopicGraphHorizonView = App.TopicGraphParentView.extend({
             .attr("height", strip_height)
             .style("fill", i%2 == 0 ? "white": "#eee");
 
+        var badgeWidth = 10;
+        var badgeColor = 'lightgray';
+        var badgeScale = d3.scale.log()
+            .clamp(true)
+            .range([1,badgeWidth/2])
+            .domain([0.005,1]);
+
+        var g = rectGroup.append("g")
+          .attr("transform", "translate(" + badgeWidth/2 + "," + (badgeWidth/2 + y) + ")")
+
+        g.append("circle")
+          .attr("stroke", badgeColor)
+          .attr("fill", "none")
+          .attr("r", badgeScale(1));
+        g.append("circle")
+            .attr("class", "inner")
+            .attr("fill", badgeColor)
+            .attr("r", badgeScale(App.topics[i].get('prevalence')));
+
         var text = topics[i];
         if (text.length > 25) text = text.substring(0,22) + "...";
         textGroup.append("text")
             .attr("y", y+8)
+            .attr("x", 12)
             .style("font-family", "Helvetica Neue")
             .style("font-size", "10px")
             .text(text);
+
         graphGroup.append("g")
             .attr("transform", "translate(0," + (y) + ")")
             .data([data[i]]).call(chart); 

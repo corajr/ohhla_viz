@@ -1,6 +1,5 @@
 App.ApplicationController = Ember.Controller.extend({
   needs: ['documents', 'topics'],
-
   topicPrevalence: function () {
     return this.get('controllers.topics.prevalences');
   }.property('controllers.topics.prevalences'),

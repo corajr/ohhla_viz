@@ -20,8 +20,7 @@ App.ApplicationRoute = Ember.Route.extend({
   events: {
     toggle: function(topic) {
         var topics = this.controllerFor('topics');
-
-        topic.toggleProperty('isSelected');
+        topic.toggleProperty("isSelected");
       }
   }
 });
