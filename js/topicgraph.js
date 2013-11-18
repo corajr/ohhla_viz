@@ -518,11 +518,13 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
           .attr("cy", function (d) { return yScale(d.y);})
           .attr("r", 5)
           .attr("fill", function (d) { return color(d.topic);});
-      var t = points.filter(function(x) { return x;})
-          .map(function (d) { 
+      var t = points.filter(function(x) { return x;});
+      t.sort(function (a,b) { return b.y - a.y;});
+      t = t.map(function (d) { 
             var topic_name = App.topics[d.topic].get("label");
+            var topic_style = App.topics[d.topic].get("style");
             var stdev = d.y.toFixed(3) +"&#x3c3;";
-            return topic_name + ": " + stdev }).join("<br/>");
+            return "<span style='" + topic_style + "'>" + topic_name + "</span>: " + stdev }).join("<br/>");
       popup(t, 300, 200, 200,100);
     });
   }.observes("graphType", "vis", "graphGroup"),
