@@ -46,7 +46,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
       return [0, d3.max(this.get('streamData'), 
         function(d) { return d3.max(d, function(d) { return d.y0 + d.y; }); })];
     else if (graphType == 'line')
-      return [-0.1, 0.1];
+      return [-3, 3];
   }).property('graphType', 'streamData'),
 
   xScale: Ember.computed(function () {
@@ -201,55 +201,40 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
   topicStdDevs: Ember.computed(function () {
     var topicIntervals = this.get('topicIntervals'),
         topics_n = this.get('controller.topics.n'),
-        topicMeans = this.get('topicMeans');
+        topicMeans = this.get('topicMeans'),
+        docCounts = this.get('docCounts');
 
-    var topics = transpose(topicIntervals.map(function(d) { return d.value;}));
-    var topicStdDevs = topics.map(d3.sd);
-    App.set("topicsByYear", topics);
+    var topics = transpose(topicIntervals.map(function(d, i) { 
+      return d.value.map(function (e) { 
+        return docCounts[i] > 0 ? e / docCounts[i] : 0;
+      });
+    }));
+    var stdDevs = topics.map(d3.sd);
+    // App.set('topicIntervals', topicIntervals);
+    // App.set("topicMeans", topicMeans);
+    // App.set("topicsByYear", topics);
+    // App.set("topicStdevs", topics);
 
-    // var topicVariances = topicIntervals.reduce(function (a,b) {
-    //   return sumArrays(a, subtractArrays(b.value, topicMeans).map(function(d){ return d*d;}));
-    // }, reduceInitial(topics_n)()); //.map(function(d) { return d / (topicIntervals.length - 1)});
-    // var topicStdDevs = topicVariances.map(function(d) { return Math.sqrt(d);});
-
-    this.get('controller.topics').set('stdDevs', topicStdDevs);
+    this.get('controller.topics').set('stdDevs', stdDevs);
     this.get('controller.topics.content').forEach(function (d,i) { 
-      d.set('stdDev', topicStdDevs[i]);
+      d.set('stdDev', stdDevs[i]);
     });
 
-    return topicStdDevs;
-  }).property('topicIntervals'),
+    return stdDevs;
+  }).property('topicIntervals', 'docCounts'),
 
   lineData: Ember.computed(function () {
-    var intervals = this.get('topicIntervals'),
-        topicStdDevs = this.get('topicStdDevs'),
-        topicMeans = this.get('topicMeans'),  
-        docCounts = this.get('docCounts'),
-        topics = this.get('controller.topics'),
-        topics_n = topics.get('n'),
-        activeTopics = this.get('graphType') == 'horizon' ? App.topics.mapProperty('id'): this.get('activeTopics'),
-        smooth = this.get('smooth').bind(this);
+    var layers = this.get('layers'),
+        topicMeans = this.get('topicMeans'),
+        topicStdDevs = this.get('topicStdDevs');
 
-    if (!activeTopics || activeTopics.length == 0) {
-      return [];
-    } else {
-      var all_layers = new Array(topics_n),
-          len = topics_n;
-      while (len--) {
-        all_layers[len] = intervals.map(
-          function (d,i) { var y = 0.0;
-                           if (docCounts[i] != 0 && topicStdDevs[len] != 0) {
-                             y = d.value[len] / docCounts[i];
-                             y -= topicMeans[len];
-                             y /= topicStdDevs[len];
-                           }
-                           return { x: d.key, topic: len, y: y }; 
-        });
-      }
-
-      all_layers = smooth(all_layers);
-      return all_layers.filter(function (_, i) { return activeTopics.indexOf(i) !== -1; });
-    }    
+    return layers.length > 0 ? layers.map(function (d) {
+      var topic = d[0].topic;
+      return d.map(function (e) {
+        e.y = topicStdDevs[topic] > 0 ? (e.y - topicMeans[topic]) / topicStdDevs[topic] : 0;
+        return e;
+      });
+    }) : 0;   
   }).property('interval', 'controller.topics', 'controller.topics.selectedIDs', 'topicIntervals', 'docCounts', 'topicStdDevs'),
 
   docCounts: Ember.computed(function () {
@@ -522,8 +507,8 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
 
       var points = vis.selectAll("path.line").data()
                     .map(function (d) {
-                        var matching = d.filter(function (p) { return Math.abs(p.x - time) < 1; }); 
-                        return {y: matching[0].y, topic: d[0].topic};
+                        var matching = d.filter(function (p) { return Math.abs(p.x - time) < 1; });
+                        return matching[0] ? {y: matching[0].y, topic: d[0].topic} : null;
                       });
       vis.selectAll("circle.mouse")
         .data(points)
