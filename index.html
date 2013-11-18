@@ -215,7 +215,10 @@
   <script type="text/x-handlebars" data-template-name="topicBox">
     {{view App.TopicPrevalenceIconView contentBinding=view.content}}
     <div class="topicName">{{#linkTo topic view.content classNames='topiclink'}}{{view.content.abbreviatedLabel}}{{/linkTo}}</div>
-    <div class="topicPercentage">{{view.content.prevalencePercent}} of corpus</div>
+    <div class="topicInfo">
+      <span class="stdev">&#x3c3; = {{view.content.stdDevFixed}}</span>
+      <span class="percent">{{view.content.prevalencePercent}} of corpus</span>
+    </div>
   </script>
 
   <script type="text/x-handlebars" data-template-name="topicGraph">

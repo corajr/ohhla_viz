@@ -201,8 +201,11 @@ div.topicBox {
     font-weight: 600 ! important;
 }
 
-.topicPercentage {
+.topicInfo {
     font-weight: 200 ! important;
+}
+.topicInfo .stdev {
+  float:right;
 }
 
 .header-row {

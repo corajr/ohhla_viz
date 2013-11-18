@@ -203,10 +203,14 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
         topics_n = this.get('controller.topics.n'),
         topicMeans = this.get('topicMeans');
 
-    var topicVariances = topicIntervals.reduce(function (a,b) {
-      return sumArrays(a, subtractArrays(b.value, topicMeans).map(function(d){ return d*d;}));
-    }, reduceInitial(topics_n)()).map(function(d) { return d / (topicIntervals.length - 1)});
-    var topicStdDevs = topicVariances.map(function(d) { return Math.sqrt(d);});
+    var topics = transpose(topicIntervals.map(function(d) { return d.value;}));
+    var topicStdDevs = topics.map(d3.sd);
+    App.set("topicsByYear", topics);
+
+    // var topicVariances = topicIntervals.reduce(function (a,b) {
+    //   return sumArrays(a, subtractArrays(b.value, topicMeans).map(function(d){ return d*d;}));
+    // }, reduceInitial(topics_n)()); //.map(function(d) { return d / (topicIntervals.length - 1)});
+    // var topicStdDevs = topicVariances.map(function(d) { return Math.sqrt(d);});
 
     this.get('controller.topics').set('stdDevs', topicStdDevs);
     this.get('controller.topics.content').forEach(function (d,i) { 
@@ -322,7 +326,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
   streamData: Ember.computed(function () {
     var layers = this.get('layers'),
         stack = this.get('stack');
-    // console.log(layers);
+    App.set("layers", layers);
     return layers.length > 0 ? stack(layers) : [];
   }).property('layers'),
 

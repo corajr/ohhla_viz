@@ -26,6 +26,10 @@ App.Topic = Ember.Object.extend({
     return (this.get('prevalence')*100).toFixed(2) + "%";
   }).property('prevalence'),
 
+  stdDevFixed: Ember.computed(function () {
+    return this.get('stdDev').toFixed(2);
+  }).property('stdDev'),
+
   relatedTopics: Ember.computed(function () {
     if (!App.topic_topic) return App.topics;
     else {
