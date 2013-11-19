@@ -148,9 +148,12 @@ function label(topicId) {
 }
 
 for (var i = 0; i < topics_n; i++) {
+  if (!App.topic_topic.hasOwnProperty(i)) {
+    App.topic_topic[i] = {};
+  }
   for (var j = i + 1; j < topics_n; j++) {
-    if (!App.topic_topic.hasOwnProperty(i)) {
-      App.topic_topic[i] = {};
+    if (!App.topic_topic.hasOwnProperty(j)) {
+      App.topic_topic[j] = {};
     }
     var i_vals = App.topics[i].get('topicOccurrence'),
         j_vals = App.topics[j].get('topicOccurrence'),
@@ -165,6 +168,7 @@ for (var i = 0; i < topics_n; i++) {
     }
     correlation /= (App.documents.length - 1) * i_stdev * j_stdev;
     App.topic_topic[i][j] = correlation;
+    App.topic_topic[j][i] = correlation;
   }
 }
 

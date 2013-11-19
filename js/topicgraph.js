@@ -223,20 +223,6 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
     return stdDevs;
   }).property('topicIntervals', 'docCounts'),
 
-  lineData: Ember.computed(function () {
-    var layers = this.get('layers'),
-        topicMeans = this.get('topicMeans'),
-        topicStdDevs = this.get('topicStdDevs');
-
-    return layers.length > 0 ? layers.map(function (d) {
-      var topic = d[0].topic;
-      return d.map(function (e) {
-        e.y = topicStdDevs[topic] > 0 ? (e.y - topicMeans[topic]) / topicStdDevs[topic] : 0;
-        return e;
-      });
-    }) : 0;   
-  }).property('interval', 'controller.topics', 'controller.topics.selectedIDs', 'topicIntervals', 'docCounts', 'topicStdDevs'),
-
   docCounts: Ember.computed(function () {
     var interval = this.get('interval'),
         docsByTime = this.get('docsByTime'),
@@ -304,16 +290,44 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
       }
 
       all_layers = smooth(all_layers);
-      return all_layers.filter(function (_, i) { return activeTopics.indexOf(i) !== -1; });
+      return all_layers;
     }
   }).property('interval', 'controller.topics', 'controller.topics.selectedIDs', 'topicIntervals', 'docCounts'),
 
+
+  lineLayers: Ember.computed(function () {
+    var layers = this.get('layers'),
+        topicMeans = this.get('topicMeans'),
+        topicStdDevs = this.get('topicStdDevs');
+
+    return layers.length > 0 ? layers.map(function (d) {
+      var topic = d[0].topic;
+      return d.map(function (e) {
+        var new_e = $.extend({}, e);
+        new_e.y = topicStdDevs[topic] > 0 ? (new_e.y - topicMeans[topic]) / topicStdDevs[topic] : 0;
+        return new_e;
+      });
+    }) : 0;   
+  }).property('interval', 'controller.topics', 'controller.topics.selectedIDs', 'topicIntervals', 'docCounts', 'topicStdDevs'),
+
   streamData: Ember.computed(function () {
     var layers = this.get('layers'),
-        stack = this.get('stack');
-    App.set("layers", layers);
-    return layers.length > 0 ? stack(layers) : [];
-  }).property('layers'),
+        stack = this.get('stack'),
+        activeTopics = this.get('activeTopics'),
+        activeLayers;
+    activeLayers = layers.length > 0 ? layers.filter(function (_, i) { 
+      return activeTopics.indexOf(i) !== -1; }) : [];
+    return activeLayers.length > 0 ? stack(activeLayers) : [];
+  }).property('layers', 'activeTopics'),
+
+  lineData: Ember.computed(function () {
+    var layers = this.get('lineLayers'),
+        activeTopics = this.get('activeTopics'),
+        activeLayers;
+    activeLayers = layers.length > 0 ? layers.filter(function (_, i) { 
+      return activeTopics.indexOf(i) !== -1; }) : [];
+    return activeLayers;
+  }).property('lineLayers', 'activeTopics'),
 
   updateAxes: function() {
     var xScale = this.get('xScale'),
@@ -475,7 +489,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
           .on("mouseout", unhighlightTopic)
           .on("click", getDocsForInterval);      
     }
-  }.observes('layers'),
+  }.observes('streamData', 'lineData'),
 
   lineMouse: function() {
     var graphType = this.get("graphType"),
@@ -508,17 +522,17 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
       var points = vis.selectAll("path.line").data()
                     .map(function (d) {
                         var matching = d.filter(function (p) { return Math.abs(p.x - time) < 1; });
-                        return matching[0] ? {y: matching[0].y, topic: d[0].topic} : null;
+                        return matching[0] ? {y: matching[0].y, topic: d[0].topic} : {};
                       });
       vis.selectAll("circle.mouse")
-        .data(points)
+        .data(points.filter(function (d) { return d.y; }))
         .enter().append("circle")
           .attr("class", "mouse")
           .attr("cx", x)
           .attr("cy", function (d) { return yScale(d.y);})
           .attr("r", 5)
           .attr("fill", function (d) { return color(d.topic);});
-      var t = points.filter(function(x) { return x;});
+      var t = points.filter(function(d) { return d.y;});
       t.sort(function (a,b) { return b.y - a.y;});
       t = t.map(function (d) { 
             var topic_name = App.topics[d.topic].get("label");

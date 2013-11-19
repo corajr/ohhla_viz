@@ -149,7 +149,7 @@
       <div class="col-md-4">
         <br/>
         {{ view App.TopicBoxView contentBinding=controller }}
-        {{ view Ember.D3.WordPlotView contentBinding="topWords" color="#d62728"}}
+        {{ view Ember.D3.WordPlotView contentBinding=topWords colorBinding=color}}
 
         {{ partial "relatedTopics"}}
       </div>

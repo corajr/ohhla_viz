@@ -62,6 +62,7 @@ Ember.D3.ChartView = Ember.View.extend({
         yAxisLabel = this.get('yAxisLabel'),
         vis;
 
+    if (!svg) return;
     vis = svg.append("g")
       .attr("width", this.get('contentWidth'))
       .attr("height", this.get('contentHeight'))

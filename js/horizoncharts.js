@@ -1,3 +1,36 @@
+d3.gm = function (x) {
+    var n = x.length;
+    if (n < 1) return NaN;
+    if (n === 1) return x[0];
+    return Math.exp(d3.mean(x.map(Math.log).filter(isFinite)));
+}
+
+function weightedGm(x, w) {
+    var n = x.length;
+    if (n < 1) return NaN;
+    if (n === 1) return x[0];
+    var log_x = x.map(Math.log);
+    w = w.filter(function (d, i) { return isFinite(log_x[i]);});
+    log_x = log_x.filter(isFinite);
+    var total = d3.sum(w);
+    return Math.exp(d3.sum(w.map(function (d, i) { return d * log_x[i]; }))/total);
+}
+
+function estimateBeta(x, w) {
+    var gx = weightedGm(x, w),
+        g_1x = weightedGm(x.map(function (d) { return 1-d;}), w),
+        denom = 2*(1-gx-g_1x);
+
+    return {alpha: 0.5 + (gx/denom),
+            beta: 0.5 + (g_1x/denom)
+    };
+}
+
+function getBetaMode(x, w) {
+    var b = estimateBeta(x, w);
+    return b.alpha + b.beta > 2 ? (b.alpha - 1) / (b.alpha + b.beta - 2) : 0;
+}
+
 function argmax(d) {
     var len = d.length,
         max = -Infinity,
@@ -49,8 +82,8 @@ App.TopicGraphHorizonView = App.TopicGraphParentView.extend({
     yScale: function () { return function() {}; }.property(),
     yAxisLabel: "",
     axesGroup: null,
-    height: 500,
-    margin: {top: 10, right: 10, bottom: 10, left: 10},
+    height: 800,
+    margin: {top: 10, right: 30, bottom: 20, left: 140},
 
     renderContent: function () {
         var vis = this.get('vis');
@@ -58,48 +91,62 @@ App.TopicGraphHorizonView = App.TopicGraphParentView.extend({
         var n = App.topics.length,
             m = App.docCounts.length,
             yMax = -Infinity,
-            data = this.get("lineData"),
+            rawData = this.get("layers"),            
+            data = this.get("lineLayers"),
             x = this.get("xScale"),
             xAxis = this.get('xAxis'),
             width = this.get("contentWidth"),
-            height = this.get("contentHeight");
+            height = this.get("contentHeight"),
+            margin = this.get("margin");
     x.domain(this.get('timeDomain'));
 
+    var indices = d3.range(data.length);
 
-    data.sort(function (a,b) {
-        var a_argmax = argmax(smoothArray(a, "mean", 5)),//.map(Math.abs)),
-            b_argmax = argmax(smoothArray(b, "mean", 5))//.map(Math.abs));
-        return a_argmax - b_argmax;
+    var getTimesAndWeights = function(topicByYear) {
+        var years = topicByYear.map(function (d) { return d.x;}),
+            start_date = years[0],
+            end_date = years[years.length - 1],
+            scaleTime = function(time) { return (time - start_date) / (end_date - start_date);},
+            scaledYears = years.map(scaleTime),
+            values = topicByYear.map(function (d) { return d.y;});
+        return [scaledYears, values];
+    };
+
+    indices.sort(function (a,b) {
+        var a_xw = getTimesAndWeights(rawData[a]),
+            b_xw = getTimesAndWeights(rawData[b]),
+            a_mode = getBetaMode(a_xw[0], a_xw[1]),
+            b_mode = getBetaMode(b_xw[0], b_xw[1]);
+        return a_mode - b_mode;
     });
 
-    // data = data.map(function (d) { return d3.zip(d3.range(d.length), d);});
-    // data = data.map(function (d) { return d3.zip(d3.range(d.length), smoothArray(d, "mean", 1));});
-
-    var strip_height = 12;
+    var strip_height = (height - 2) / App.topics.length;
     var topics = App.topics.mapProperty("label");
 
-    var text_margin = 140;
-    var rectGroup = vis.append("g");
-    var textGroup = vis.append("g");
+    var rectAndTextGroup = vis.append("g")
+        .attr("transform", "translate(" + -margin.left + ", 0)");
+    var rectGroup = rectAndTextGroup.append("g");
+    var textGroup = rectAndTextGroup.append("g");
 
-    var graphAndAxes = vis.append("g")
-        .attr("transform", "translate(" + text_margin + ", 0)");
+    var graphAndAxes = vis.append("g");
     var graphGroup = graphAndAxes.append("g");
-    var axesGroup = graphAndAxes.append("g").attr("transform", "translate(0," + height + ")");
+    var axesGroup = graphAndAxes.append("g")
+        .attr("transform", "translate(0," + height + ")");
     this.set("axesGroup", axesGroup);
     var lineGroup = vis.append("g");
 
 
     for (var i = 0; i < n; i++) {
-        var chart = d3.horizon()
-            .width(width)
-            .height(strip_height -1)
-            .x(function (d) { return d.x; })
-            .y(function (d) { return d.y; })
-            .yMax(0.1)
-            .bands(5)
-            .mode("offset")
-            .interpolate("basis");
+        var idx = indices[i],
+            chart = d3.horizon()
+                .width(width)
+                .height(strip_height -1)
+                .x(function (d) { return d.x; })
+                .y(function (d) { return d.y; })
+                .yMax(3)
+                .bands(5)
+                .mode("offset")
+                .interpolate("basis");
 
         var y = (strip_height ) * i;
         // lineGroup.append("line")
@@ -110,12 +157,13 @@ App.TopicGraphHorizonView = App.TopicGraphParentView.extend({
         //     .attr("y2", y-1);
 
         rectGroup.append("rect")
+            .attr("x", -margin.left)
             .attr("y", y)
-            .attr("width", width + text_margin)
+            .attr("width", width + margin.left)
             .attr("height", strip_height)
             .style("fill", i%2 == 0 ? "white": "#eee");
 
-        var badgeWidth = 10;
+        var badgeWidth = strip_height - 1;
         var badgeColor = 'lightgray';
         var badgeScale = d3.scale.log()
             .clamp(true)
@@ -132,20 +180,20 @@ App.TopicGraphHorizonView = App.TopicGraphParentView.extend({
         g.append("circle")
             .attr("class", "inner")
             .attr("fill", badgeColor)
-            .attr("r", badgeScale(App.topics[i].get('prevalence')));
+            .attr("r", badgeScale(App.topics[idx].get('prevalence')));
 
-        var text = topics[i];
+        var text = topics[idx];
         if (text.length > 25) text = text.substring(0,22) + "...";
         textGroup.append("text")
-            .attr("y", y+8)
-            .attr("x", 12)
+            .attr("y", y+(strip_height*0.6))
+            .attr("x", badgeWidth + 2)
             .style("font-family", "Helvetica Neue")
-            .style("font-size", "10px")
+            .style("font-size", strip_height * 0.7)
             .text(text);
 
         graphGroup.append("g")
             .attr("transform", "translate(0," + (y) + ")")
-            .data([data[i]]).call(chart); 
+            .data([data[idx]]).call(chart); 
     }
     var xaxisg = axesGroup.append("g")
         .attr("class", "x axis")
