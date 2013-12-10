@@ -1,0 +1,1 @@
+˜„¥topic¤text¥stand¤probË?Ö–––––—£idfË?ì,¯‹I]’„¥topic¤text¦nothin¤probË?Æ–––––—£idfË?ãÿc"šé„¥topic¤text¤fall¤probË?Æ–––––—£idfË?í¿Â»^„¥topic¤text¨somethin¤probË?¾£idfË?äfþƒN¤)„¥topic¤text¤life¤probË?®£idfË?ÚsØ,ØË»„¥topic¤text¤true¤probË?®£idfË?ìœ•DÅùÃ„¥topic¤text¤love¤probË?ž£idfË?×ÈÆŒÒ‹|„¥topic¤text¥power¤probË?ž£idfË?óLm g™<

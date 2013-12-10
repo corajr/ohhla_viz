@@ -1,0 +1,2 @@
+Ÿ„¥topic0¤text¤lord¤probË?Á£idfË?ñBwKó¢„¥topic¤text¤pain¤probË?¶ÁlÁl£idfË?î¦{Í'ðØ„¥topic¤text¥dealt¤probË?¶ÁlÁl£idfË?þ¡¡A´G„¥topic¤text¤stop¤probË?¶ÁlÁl£idfË?à¡ÕÅƒw$„¥topic0¤text§shocked¤probË?¶ÁlÁl£idfË@6vÒ`·„¥topic0¤text¤kill¤probË?¶ÁlÁl£idfË?éÒ:Û¡Ýï„¥topic0¤text¥world¤probË?¶ÁlÁl£idfË?ã£*l„¥topic¤text¤grow¤probË?¶ÁlÁl£idfË?õA.Õ„¥topic¤text¤life¤probË?¦ÁlÁl£idfË?ÚsØ,ØË»„¥topic0¤text¤pray¤probË?¦ÁlÁl£idfË?ôQL9»Œ„¥topic¤text¥watch¤probË?¦ÁlÁl£idfË?ä~L©Ê–„¥topic¤text¤live¤probË?¦ÁlÁl£idfË?âÜ¥
+Ÿî„¥topic*¤text¦lyrics¤probË?–ÁlÁl£idfË?ôŒ©(Ñ„¥topic¤text¤song¤probË?–ÁlÁl£idfË?îØ¤×jpÖ„¥topic0¤text¤sung¤probË?–ÁlÁl£idfË@I*Ížç

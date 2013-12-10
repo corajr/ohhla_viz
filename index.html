@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Original Hip-Hop Lyrics Archive</title>
+<link href="css/bootstrap.css" rel="stylesheet">
+<link href="css/bootstrap-tour.css" rel="stylesheet">
+<link href="css/style.css" rel="stylesheet">
+<link href="css/ember-table.css" rel="stylesheet">
+</head>
+<body>
+
+  <script type="text/x-handlebars" data-template-name="application">
+  <div id="wrap">
+  <!--
+      <div class="navbar navbar-fixed-top">
+        <div class="navbar-inner">
+          <div class="container">
+            <a class="brand" href="#">{{ App.collectionName }}</a>
+            {{ view App.NavbarItemsView }}
+          </div>
+        </div>
+      </div>
+      -->
+
+  <div class="modal fade" id="hideTopic" tabindex="-1" role="dialog" aria-labelledby="hideTopicLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title" id="hideTopicLabel">Hide Topic</h4>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to hide <strong>&ldquo;{{App.topicToHide.label}}&rdquo;</strong>? It will no longer appear on the sidebar or in search.</p>
+          <p class="text-muted">Note: to re-enable hidden topics, click the gear icon at the top right).</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" {{action commitHide}} data-dismiss="modal">Hide topic</button>
+        </div>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+      <div class="container">
+        {{ partial "controlIcons" }}
+
+        <a id="back" href="javascript:history.back();"></a>
+        <h2 id="headline"><a href="#">{{ App.collectionName }}</a></h2>
+      </div>
+
+      <div class="container">
+        {{outlet}}
+      </div>
+    </div>
+
+    <div id="footer">
+      <div class="container">
+        <p class="text-muted">The code for this topic browser is at <a href="http://github.com/chrisjr/ohhla_viz">github.com/chrisjr/ohhla_viz</a>. For more info, contact <a id="email"></a>.</p>
+      </div>
+    </div>
+
+      <script language="javascript" type="text/javascript">
+      $(function () {
+        var pre = "chris.johnson.roberson";
+        var domain = "@gmail.com";
+        $("#email").html("<a href='mailto:" + pre + domain +"'>" + pre + domain + "</a>");
+      })
+
+        </script>
+      </div>
+    </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="_controlIcons">
+    <div class="control-icons">
+        <!--<a id="save"></a> -->
+        <a id="config"></a>
+        <a id="help"></a>
+      </div>
+      <div style="display: none;">
+        <div id="saveButton">
+          {{ render "saveButton" }}
+        </div>
+        <div id="configButton">
+          {{ render "configButton" }}
+        </div>
+        <div id="helpButton">
+          {{ render "helpButton" }}
+        </div>
+    </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="saveButton">
+    <div class='btn-group-vertical'>
+      {{#each b in controller.buttons}}
+        <button type='button' class='btn btn-default'>{{b.text}}</button>
+      {{/each}}
+    </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="configButton">
+    <div class="config">
+        {{#linkTo topicGraph.stacked topics.selected}}<span class="col1">Stacked Area</span> <img src="img/stacked.png"/>{{/linkTo}}
+        <div style="clear: both;"></div>
+        {{#linkTo topicGraph.line topics.selected}}<span class="col1" id="line">Line Graph</span> <img src="img/line.png"/>{{/linkTo}}
+        <div style="clear: both;"></div>
+        {{#linkTo topicGraph.horizon topics.selected}}<span class="col1">Horizon Charts</span> <img src="img/horizon.png"/>{{/linkTo}}
+    </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="helpButton">
+    <div class='btn-group-vertical'>
+      {{#each b in controller.buttons}}
+        <button type='button' class='btn btn-default'>{{b.text}}</button>
+      {{/each}}
+    </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="document">
+    <div class="row">
+      <div class="col-xs-12">
+        <h4>{{itemLink title itemID}}</h4>
+        <p>{{date date}}</p>
+      </div>
+    </div>    
+    <div class="row">
+      <div class="col-xs-6">
+        {{view App.DocTopicsView }}
+      </div>
+      <div class="col-xs-6">
+        {{view Ember.D3.WordPlotView contentBinding="topWords" 
+                                     labelFontSize=18 
+                                     xAxisLabel="Generality (IDF)"
+                                     fontSize=20 
+                                     maxWords=20 
+                                     height=600}}
+      </div>
+    </div>
+  </script>
+  <script type="text/x-handlebars" data-template-name="docTopic">
+    <td {{bindAttr style='view.content.style'}}
+        {{bindAttr class=view.content.origTopic.isSelected}}
+        {{action toggle view.content.origTopic}}>
+      {{view App.TopicPrevalenceIconView contentBinding=view.content.origTopic size=16}}
+      {{#linkTo topic view.content.origTopic classNames='topiclink' attributeBinding="styleInvariant:style"}}{{view.content.text}}{{/linkTo}}
+    </td>
+    <td>{{percent view.content.prob}}</td>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="documents">
+    <!-- <h2>Documents</h2> -->
+    <div class="row">
+      <div class="col-xs-12">
+        <table class="table table-condensed">
+          <thead>
+            <tr>
+              {{partial "sortTypes"}}
+            </tr>
+          </thead>
+          <tbody>
+            {{#each controller}}
+            <tr>
+              <td>{{date date}}</td>
+              <td>{{localItemLink title itemURL}}</td>
+              <td>{{author}}</td>
+              <td>{{type}}</td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="_sortTypes">
+    <th>Date
+      {{#if sort.isAscending }}
+        <span class="caret up"></span>
+      {{else}}
+        <span class="caret"></span>
+      {{/if}}
+    </th>
+    <th {{action sortBy "title"}}>Title</th>
+    <th {{action sortBy "author"}}>Author</th>
+    <th {{action sortBy "type"}}>Type</th>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="topic">
+    <div class="row">
+      <div class="col-xs-4">
+        <br/>
+        {{ view App.TopicBoxView contentBinding=controller }}
+        {{ view Ember.D3.WordPlotView contentBinding=topWords colorBinding=color}}
+
+        {{ partial "relatedTopics"}}
+      </div>
+      <div class="col-xs-8 presentation-container">
+        {{!--  {{ view App.DocumentsForTopicView }}
+                {{ render "documents" documentsForTopic }} --}}
+
+        {{view Ember.Table.TablesContainer controllerBinding="App.documentsTable"}}
+      </div>
+    </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="topicSummary">
+    <div class="row">
+      <div class="col-xs-12">
+        {{ view BC.RangeInput max="1" step="0.01" valueBinding="controller.threshold"}}
+      </div>     
+      <div class="col-xs-12">        
+        {{ view Ember.D3.NetworkView contentBinding="controller.content"}}
+      </div>
+    </div>  
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="_relatedTopics">
+    <h4>Related Topics</h4>
+      {{#each relatedTopic in relatedTopics }}
+      <div class="topicBox" 
+        {{bindAttr style='view.content.style'}}
+        {{bindAttr class=relatedTopic.isSelected}}>
+      {{view App.TopicPrevalenceIconView contentBinding=relatedTopic size=16}}
+      {{#linkTo topic relatedTopic classNames='topiclink'}}{{relatedTopic.label}}{{/linkTo}}
+      {{topicCorrelation controller.content relatedTopic}}
+      </div>
+      {{/each}}
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="autocomplete">
+    {{input type="search" value=searchText }}
+    {{ view App.AutocompleteResultsView contentBinding=searchResults }}
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="topics">
+    {{render "autocomplete"}}
+    <div id="topics_sidebar" class="showScroll">
+      <div id="topics_list">
+        <div id="uparrow"></div>
+        {{ view App.TopicsInnerView contentBinding=controller }}
+        <div id="downarrow">
+<!--        <img src="img/downarrow.svg"/>-->
+        </div>
+      </div>
+    </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="_hoverTopic">
+    <div id="topic_wordcloud">
+    {{#if App.hoverTopic }}
+      {{#if App.clickedTopic }}
+        <button type="button" class="close" aria-hidden="true" {{action unpin}}><img src="img/pin.svg" width="16"/></button>
+      {{/if}}
+      {{ view App.TopicBoxView contentBinding=App.hoverTopic}}
+      {{ view Ember.D3.WordPlotView contentBinding=App.hoverTopicWords colorBinding=App.hoverTopicColor }}
+    {{/if}}
+    </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="topicBox">
+    {{view App.TopicPrevalenceIconView contentBinding=view.content}}
+    <button type="button" class="close" aria-hidden="true" style="float: right;" {{action hideTopic view.content}}><img src="img/eye.svg" width="16"/></button>
+    <div class="topicName">{{#linkTo topic view.content classNames='topiclink' titleBinding=view.goToLabel}}{{view.content.label}}{{/linkTo}}</div>
+    <div class="topicInfo">
+      <span class="stdev">&#x3c3; = {{view.content.stdDevFixed}}</span>
+      <span class="percent">{{view.content.prevalencePercent}} of corpus</span>
+    </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="topicGraph">
+
+    {{#if App.horizon }}
+      <p class="text-warning">If nothing appears below, please refresh the page.</p>
+      <div class="row">
+        <div class="col-xs-12">
+          {{outlet}}
+        </div>
+      </div>
+
+    {{else}}
+    <div class="row">
+      <div class="col-xs-3">
+        {{ render "topics" }}
+      </div>
+      <div class="col-xs-9">
+{{!--        {{view Ember.ContainerView currentViewBinding="App.docCountView"}} --}}
+        <div id="topics_graph">
+          {{outlet}}
+        </div>
+      </div>
+    </div>
+    {{/if}}
+
+    <div class="row">
+      <div class="col-xs-3">
+        {{ partial "hoverTopic" }}
+      </div>
+      <div class="col-xs-9 presentation-container">
+        {{#if App.clickedTopic }}
+          {{view Ember.Table.TablesContainer controllerBinding="App.documentsTable"}}
+        {{/if}}
+      </div>
+    </div>
+  </script>
+
+  <script src="js/libs/jquery-1.9.1.js"></script>
+  <script src="js/libs/jquery-ui.min.js"></script>
+  <script src="js/libs/jquery.mousewheel.js"></script>
+  <script src="js/libs/handlebars-1.0.0-rc.4.js"></script>
+  <script src="js/libs/ember-1.0.0-rc.5.js"></script>
+  <script src="js/libs/ember.jq.animate.js"></script>
+  <script src="js/libs/ember-table.js"></script>
+  <script src="js/libs/crossfilter.js"></script>
+  <script src="js/libs/bootstrap.js"></script>
+  <script src="js/libs/bootstrap-tour.js"></script>
+  <script src="js/libs/msgpack.js"></script>
+  <script src="js/libs/ember-crossfilter.js"></script>
+  <script src="js/libs/d3.min.js"></script>
+  <script src="js/libs/d3.layout.cloud.js"></script>
+  <script src="js/libs/horizon.js"></script>
+  <script src="js/libs/canvg-1.3/rgbcolor.js"></script>
+  <script src="js/libs/canvg-1.3/StackBlur.js"></script>
+  <script src="js/libs/canvg-1.3/canvg.js"></script>
+<!--  <script src="js/bs/bs-core.max.js"></script>
+  <script src="js/bs/bs-modal.max.js"></script>
+  <script src="js/bs/bs-button.max.js"></script>-->
+
+  <script src="js/mask_cloud.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/models.js"></script>
+  <script src="js/ohhla_lda.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/controllers.js"></script>
+  <script src="js/views.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/ember-d3.js"></script>
+  <script src="js/wordcloud.js"></script>
+  <script src="js/wordplot.js"></script>
+  <script src="js/topicgraph.js"></script>
+  <script src="js/network.js"></script>
+  <script src="js/controls.js"></script>
+  <script src="js/tour.js"></script>
+  <script src="js/horizoncharts.js"></script>
+  <script type="text/javascript">
+
+  // http://simurai.com/post/8083942390/force-lion-scrollbar
+  if (navigator.appVersion.indexOf("10_7") != -1) {
+    jQuery('.showScroll').addClass('lion');
+  }
+  </script>
+</body>
+</html>

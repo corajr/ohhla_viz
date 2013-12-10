@@ -1,0 +1,2 @@
+ฅtopicคtextคrealคprobห?รฑ;ฑ;ฃidfห?Û3FตJๆ:ฅtopicคtextฉgratitudeคprobห?ณฑ;ฑ;ฃidfห@์6บkÿฅtopic*คtextฆemceesคprobห?ณฑ;ฑ;ฃidfห?üS(,^๎^ฅtopicคtextคshowคprobห?ณฑ;ฑ;ฃidfห?โ\Gฅeิฅtopicคtextฉrecognizeคprobห?ณฑ;ฑ;ฃidfห?๗ÿม๎ี…๔ฅtopicคtextคfansคprobห?ณฑ;ฑ;ฃidfห?๗พ๚uฅtopicคtextฌappreciationคprobห?ณฑ;ฑ;ฃidfห@u,X"๗ฅtopicคtextคgameคprobห?ณฑ;ฑ;ฃidfห?฿Û+แü—๚ฅtopicคtextฅyouveคprobห?ณฑ;ฑ;ฃidfห?๔๛’w‘ธpฅtopic$คtextฆechoesคprobห?ณฑ;ฑ;ฃidfห?๚ชดdิ_ีฅtopicคtextคlineคprobห?ณฑ;ฑ;ฃidfห?์๘d
+์ด๘ฅtopicคtextฆwantedคprobห?ณฑ;ฑ;ฃidfห?๒}โZโลk

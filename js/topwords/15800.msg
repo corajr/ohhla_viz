@@ -1,0 +1,2 @@
+œ„¥topic¤text¥gonna¤probË?ÇEÑt]F£idfË?äsÇö'‘ „¥topic¤text¥yknow¤probË?ÇEÑt]F£idfË?û3ÊTÔáÀ„¥topic
+¤text¦people¤probË?Át]EÑt£idfË?äDF§h(ˆ„¥topic¤text¤feel¤probË?Át]EÑt£idfË?ßãÏyõ‰"„¥topic¤text§billion¤probË?§EÑt]F£idfË@–Õ‚ î„¥topic¤text¨somethin¤probË?§EÑt]F£idfË?äfþƒN¤)„¥topic¤text¨remember¤probË?§EÑt]F£idfË?îÓ<Rôú„¥topic¤text¦gettin¤probË?§EÑt]F£idfË?Þöýô[4„¥topic¤text¤fast¤probË?§EÑt]F£idfË?îqƒ‡(Å„¥topic¤text§realize¤probË?§EÑt]F£idfË?ø½?[óx„¥topic¤text¦matter¤probË?§EÑt]F£idfË?î˜Gñ-ÙÌ„¥topic¤text¥youve¤probË?§EÑt]F£idfË?ôû’w‘¸p

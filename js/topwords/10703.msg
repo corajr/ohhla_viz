@@ -1,0 +1,1 @@
+˜„¥topic¤text¦things¤probË?É™™™™™š£idfË?èÙWÖÊÿ„¥topic¤text¦change¤probË?É™™™™™š£idfË?ëU†D2q„¥topic¤text¥grant¤probË?¹™™™™™š£idfË@\*ÚEó÷„¥topic¤text¦accept¤probË?¹™™™™™š£idfË?ýê<ƒjé,„¥topic¤text¦wisdom¤probË?¹™™™™™š£idfË?ýÛ;„„¥topic¤text§courage¤probË?¹™™™™™š£idfË@6P9Ž(7„¥topic¤text¨serenity¤probË?¹™™™™™š£idfË@:+Â¸,ª„¥topic¤textªdifference¤probË?¹™™™™™š£idfË?ü0Ö:¤Á
