@@ -79,7 +79,7 @@ function smooth(layers, type, windowSize) {
 
 
 App.TopicGraphHorizonView = App.TopicGraphParentView.extend({
-    yScale: function () { return function() {}; }.property(),
+    yScale: function () { },
     yAxisLabel: "",
     axesGroup: null,
     height: 800,
@@ -98,6 +98,7 @@ App.TopicGraphHorizonView = App.TopicGraphParentView.extend({
             width = this.get("contentWidth"),
             height = this.get("contentHeight"),
             margin = this.get("margin");
+    if (!data.length) return;
     x.domain(this.get('timeDomain'));
 
     var indices = d3.range(data.length);
@@ -130,13 +131,14 @@ App.TopicGraphHorizonView = App.TopicGraphParentView.extend({
 
     var graphAndAxes = vis.append("g");
     var graphGroup = graphAndAxes.append("g");
+    this.set("graphGroup", graphGroup);
     var axesGroup = graphAndAxes.append("g")
         .attr("transform", "translate(0," + height + ")");
     this.set("axesGroup", axesGroup);
     var lineGroup = vis.append("g");
 
 
-    for (var i = 0; i < n; i++) {
+    indices.forEach(function (idx, i) {
         var idx = indices[i],
             chart = d3.horizon()
                 .width(width)
@@ -149,19 +151,15 @@ App.TopicGraphHorizonView = App.TopicGraphParentView.extend({
                 .interpolate("basis");
 
         var y = (strip_height ) * i;
-        // lineGroup.append("line")
-        //     .style("stroke", "white")
-        //     .attr("x1", 0)
-        //     .attr("x2", width + text_margin)
-        //     .attr("y1", y-1)
-        //     .attr("y2", y-1);
 
         rectGroup.append("rect")
-            .attr("x", -margin.left)
+            .attr("x", 0)
             .attr("y", y)
             .attr("width", width + margin.left)
             .attr("height", strip_height)
             .style("fill", i%2 == 0 ? "white": "#eee");
+
+        data[idx].y = y;
 
         var badgeWidth = strip_height - 1;
         var badgeColor = 'lightgray';
@@ -180,21 +178,28 @@ App.TopicGraphHorizonView = App.TopicGraphParentView.extend({
         g.append("circle")
             .attr("class", "inner")
             .attr("fill", badgeColor)
-            .attr("r", badgeScale(App.topics[idx].get('prevalence')));
+            .attr("r", badgeScale(App.topics[idx] ? App.topics[idx].get('prevalence') : 0.0));
 
-        var text = topics[idx];
-        if (text.length > 25) text = text.substring(0,22) + "...";
+        var text = topics[idx],
+            topicText = text,
+            hashLink = "#/topic/" + idx;
+        if (text.length > 25) topicText = text.substring(0,22) + "...";
+
         textGroup.append("text")
             .attr("y", y+(strip_height*0.6))
             .attr("x", badgeWidth + 2)
             .style("font-family", "Helvetica Neue")
             .style("font-size", strip_height * 0.7)
-            .text(text);
+            .on("click", function() { window.location.hash = hashLink; })
+            .text(topicText)
+                .append("title")
+                    .text("Go to topic: "+text);
 
         graphGroup.append("g")
+            .attr("class", "chartband topic"+idx)
             .attr("transform", "translate(0," + (y) + ")")
             .data([data[idx]]).call(chart); 
-    }
+    });
     var xaxisg = axesGroup.append("g")
         .attr("class", "x axis")
         .call(xAxis);

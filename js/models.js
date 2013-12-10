@@ -12,6 +12,7 @@ App.Document = Ember.Object.extend({
   date: new Date(),
   topics: [],
   topWords: [],
+  url: ""
 });
 
 App.Topic = Ember.Object.extend({
@@ -57,7 +58,9 @@ App.Topic = Ember.Object.extend({
   }).property('color', 'isSelected'),
 
   styleInvariant: Ember.computed(function() {
-    return "color: " + this.get('color') + ";";
+    var topicColors = Ember.get(App, 'topicColors'),
+        color = topicColors(this.get('id'));
+    return "color: " + color + ";";
   }).property('color'),
 
   coherence: 0.0,

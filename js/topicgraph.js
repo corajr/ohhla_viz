@@ -2,7 +2,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
   width: 'auto',
   height: 420,
   minimumWidth: 600,
-  margin: {top: 15, right: 0, bottom: 30, left: 45},
+  margin: {top: 15, right: 0, bottom: 90, left: 45},
 
   yAxisLabel: Ember.computed(function () {
     var graphType = this.get('controller.graphType');
@@ -66,10 +66,28 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
     return d3.svg.axis()
               .scale(this.get('xScale'))
               .orient("bottom")
-              .tickFormat(this.get('timeTickFormat'))
               .tickSize(-height)
-              .tickSubdivide(this.get('intervalType') == "year" ? 4 : 1)
+              // .tickFormat(this.get('timeTickFormat'))
+             .tickSubdivide(this.get('intervalType') == "year" ? 4 : 1)
   }).property('timeTickFormat', 'intervalType', 'xScale'),
+
+  brushXAxis: Ember.computed(function() {
+      var height = this.get('brushHeight');
+      return d3.svg.axis()
+                .scale(this.get('brushX'))
+                .orient("bottom")
+                .tickFormat(this.get('timeTickFormat'))
+                .tickSize(-height)
+                .tickSubdivide(this.get('intervalType') == "year" ? 4 : 1)
+  }).property('brushX', 'brushHeight'),
+
+  brushYAxis: Ember.computed(function() {
+      var height = this.get('brushHeight');
+      return d3.svg.axis()
+                .scale(this.get('brushY'))
+                .orient("left")
+                .ticks(1);
+  }).property('brushY', 'brushHeight'),
 
   yAxis: Ember.computed(function() {
     var width = this.get('contentWidth'),
@@ -124,6 +142,10 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
         .attr("clip-path", "url(#plot-region)"));
       this.set('gradientGroup', vis.append("g").attr("class", "gradient group"));
       this.set('axesGroup', vis.append("g").attr("class", "axes group"));
+      this.set('contextGroup', vis.append("g")
+          .attr("class", "context group")
+          .attr("transform", "translate(0," + (height + 30) + ")"));
+
     }
   },
 
@@ -133,11 +155,112 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
       .order(this.get('order'));
   }).property("offset", "order"),
 
+  restrictedTimeDomain: Ember.computed.alias("App.restrictedTimeDomain"),
+  brushHeight: 20,
+  brushX: function () {
+    var width = this.get("contentWidth"),
+        overallTimeDomain = App.get("overallTimeDomain");
+
+    return d3.time.scale()
+        .domain(overallTimeDomain)
+        .range([0, width]);
+  }.property("App.overallTimeDomain", "contentWidth"),
+  brushY: function () {
+    var brushHeight = this.get('brushHeight'),
+        docCounts = this.get("docCounts");
+
+    return d3.scale.linear()
+      .domain([0, d3.max(docCounts)])
+      .range([brushHeight, 0])
+
+  }.property("brushHeight", "docCounts"),
+  brush: function () {
+    var brushX = this.get("brushX");
+
+    return d3.svg.brush()
+      .x(brushX);
+  }.property("brushX"),
+  brushed: function () {
+    var brush = this.get("brush"),
+        brushX = this.get("brushX"),
+        xScale = this.get("xScale"),
+        that = this,
+        updateAll = function (domain) {
+          xScale.domain(domain);
+          that.updateAxes();
+          that.updateGraph();
+          that.updateGradient();
+        };
+
+    return function () {
+      var domain = brush.empty() ? brushX.domain() : brush.extent();
+      App.set("restrictedTimeDomain", domain);
+      updateAll(domain);
+    };
+  }.property("brush"),
+  dateDocCounts: function () {
+    var docCounts = this.get("docCounts"),
+        topicIntervals = this.get("topicIntervals");
+    return d3.zip(topicIntervals.mapProperty("key"), docCounts);
+  }.property("topicIntervals", "docCounts"),
+  renderBrushLine: function() {
+    var context = this.get("contextGroup"),
+        lineBrush = this.get("lineBrush"),
+        brushHeight = this.get("brushHeight"),
+        dateDocCounts = this.get("dateDocCounts");
+
+    if (!context) return;
+
+    if (context.select("path.line").empty()) {
+      context.append("path")
+        .datum(dateDocCounts)
+        .attr("class", "line")
+        .attr("d", lineBrush)
+        .style("fill", "none")
+        .style("stroke", "black");
+
+      var brush = this.get("brush"),
+          brushed = this.get("brushed"),
+          brushXAxis = this.get("brushXAxis"),
+          brushYAxis = this.get("brushYAxis");
+
+      context.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + brushHeight +")") 
+        .call(brushXAxis)
+
+      var yAxis = context.append("g")
+        .attr("class", "y axis");
+        // .attr("transform", "translate(0," + brushHeight +")") 
+      yAxis.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("x", 0 - (brushHeight / 2))
+        .attr("y", -35) //margin.left / 2)
+        .style("text-anchor", "middle")
+        .text("# Docs");
+      yAxis.call(brushYAxis)
+
+      App.set("brush", brush);
+
+      brush.on("brush", brushed);
+
+      context.append("g")
+        .attr("class", "x brush")
+        .call(brush)
+        .selectAll("rect")
+          .attr("y", -6)
+          .attr("height", brushHeight + 7);
+    }
+  },
   timeDomain: Ember.computed(function () {
     var interval = this.get('interval'),
         docsByTime = this.get('docsByTime'),
-        overallTimeDomain = App.get('timeDomain');
-    if (overallTimeDomain) {
+        restrictedTimeDomain = this.get('restrictedTimeDomain'),
+        overallTimeDomain = App.get('overallTimeDomain');
+    if (restrictedTimeDomain) {
+      docsByTime.filterRange(restrictedTimeDomain);
+      return restrictedTimeDomain;      
+    } else if (overallTimeDomain) {
       docsByTime.filterRange(overallTimeDomain);
       return overallTimeDomain;
     } else if (docsByTime) {
@@ -149,7 +272,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
     } else {
       return [new Date(), new Date()];
     }
-  }).property('interval', 'docsByTime', 'App.timeDomain'),
+  }).property('interval', 'docsByTime', 'App.overallTimeDomain', 'App.restrictedTimeDomain'),
 
   interpolateType: 'monotone',
   offset: Ember.computed(function () {
@@ -181,6 +304,15 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
       .y(function(d) { return y(d.y); });
   }).property('xScale', 'yScale', 'interpolateType'),
 
+  lineBrush: Ember.computed(function () {
+    var brushX = this.get('brushX'),
+        brushY = this.get('brushY');
+
+    return d3.svg.line()
+      // .interpolate(interpolateType)
+      .x(function(d) { return brushX(d[0]); })
+      .y(function(d) { return brushY(d[1]); });
+  }).property('brushX', 'brushY'),
 
   docsByTime: function() {
     return this.get('controller.documents.docsByTime');
@@ -210,7 +342,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
       });
     }));
     var stdDevs = topics.map(d3.sd);
-    // App.set('topicIntervals', topicIntervals);
+    App.set('topicIntervals', topicIntervals);
     // App.set("topicMeans", topicMeans);
     // App.set("topicsByYear", topics);
     // App.set("topicStdevs", topics);
@@ -271,6 +403,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
   layers: Ember.computed(function () {
     var intervals = this.get('topicIntervals'),
         stdDevs = this.get('topicStdDevs'),
+        means = this.get('topicMeans'),
         docCounts = this.get('docCounts'),
         topics = this.get('controller.topics'),
         topics_n = topics.get('n'),
@@ -284,16 +417,16 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
           len = topics_n;
       while (len--) {
         all_layers[len] = intervals.map(
-          function (d,i) { var y = docCounts[i] != 0 ? d.value[len] / docCounts[i] : 0 ;
-                           return { x: d.key, topic: len, y: y }; 
+          function (d,i) { var y = docCounts[i] != 0 ? d.value[len] / docCounts[i] : 0,
+                               topic = len;
+                           return { x: d.key, topic: topic, y: y, stdDev: stdDevs[topic] > 0 ? (y - means[topic]) / stdDevs[topic] : 0 }; 
         });
       }
 
       all_layers = smooth(all_layers);
       return all_layers;
     }
-  }).property('interval', 'controller.topics', 'controller.topics.selectedIDs', 'topicIntervals', 'docCounts'),
-
+  }).property('interval', 'controller.topics', 'controller.topics.selectedIDs', 'topicIntervals', 'docCounts', 'topicStdDevs'),
 
   lineLayers: Ember.computed(function () {
     var layers = this.get('layers'),
@@ -304,6 +437,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
       var topic = d[0].topic;
       return d.map(function (e) {
         var new_e = $.extend({}, e);
+        new_e.prevalence = e.y;
         new_e.y = topicStdDevs[topic] > 0 ? (new_e.y - topicMeans[topic]) / topicStdDevs[topic] : 0;
         return new_e;
       });
@@ -427,29 +561,29 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
 
     if (!graphGroup) return;
     App.set("getDocsForTime", this.get("getDocsForTime").bind(this));
-    graphGroup.selectAll(".graph").remove();
 
     if (graphType == 'stream' || graphType == 'stacked') {
-      var graphSelection = graphGroup.append("svg:g")
-        .attr("class", "graph")
-        .selectAll("path")
-          .data(streamData);      
+      var graphSelection = graphGroup.selectAll("path")
+          .data(streamData, function (d) { return d[0].topic;}); //.append("svg:g").attr("class", "graph")
 
       graphSelection.enter().append("svg:path")
           .attr("class", function (d) { return "area topic" + d[0].topic;})
-          .attr("d", function(d) { return area(d);})
           .style("fill", function (d,i) { return color(d[0].topic);})
           .on("mouseover", function (d) { highlightTopic(d[0].topic);})
           .on("mouseout", unhighlightTopic)
           .on("click", getDocsForInterval);
 
-      defs.selectAll("clipPath.topic").remove();
-      defs.selectAll("clipPath.topic")
-        .data(streamData)
+      graphSelection
+          .attr("d", function(d) { return area(d);})
+
+      var clipPaths = defs.selectAll("clipPath.topic")
+        .data(streamData, function (d) { return d[0].topic;})
         .enter().append("svg:clipPath")
           .attr("id", function (d) { return "clipTopic" + d[0].topic;})
           .attr("class", "topic")
-        .append("svg:path")
+        .append("svg:path");
+
+      clipPaths
           .attr("d", function(d) { return area(d);});
 
       if (maskCloudsActive) {
@@ -475,20 +609,23 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
         });        
       }
     } else if (graphType == 'line') {
-      var graphSelection = graphGroup.append("svg:g")
-        .attr("class", "graph")
+      var graphSelection = graphGroup
         .selectAll("path")
-          .data(lineData);      
+        .data(lineData, function (d) { return d[0].topic;});      
 
       graphSelection.enter().append("svg:path")
           .attr("class", function (d) { return "line topic" + d[0].topic;})
-          .attr("d", function(d) { return line(d);})
           .style("stroke", function (d,i) { return color(d[0].topic);})
           .style("fill", "none")
           .on("mouseover", function (d) { highlightTopic(d[0].topic);})
           .on("mouseout", unhighlightTopic)
-          .on("click", getDocsForInterval);      
+          .on("click", getDocsForInterval);   
+
+      graphSelection
+        .attr("d", function(d) { return line(d);})
+   
     }
+    graphSelection.exit().remove();
   }.observes('streamData', 'lineData'),
 
   lineMouse: function() {
@@ -499,47 +636,131 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
         yScale = this.get("yScale").bind(this),
         height = this.get("contentHeight"),
         get$ = (function (x) { return this.get(x);}).bind(this),
+        set$ = (function (x, v) { return this.set(x, v);}).bind(this),
+        getDocsForInterval = this.get("getDocsForInterval").bind(this),
         graphGroup = this.get("graphGroup"),
         interval = this.get('interval');
-    if (!vis || graphType != "line") return;
+    if (!vis) return; //|| (graphType != "line" && graphType != "stacked")) return;
+
+    // svg.on("click", function (d) {
+    //   var graphGroup = get$("graphGroup"),
+    //       popup = get$("popup"),
+    //       x = d3.mouse(graphGroup[0][0])[0],
+    //       time = interval.floor(xScale.invert(x));
+    //   set$("lineFrozen", true);
+    //   var inputHtml = "<div contenteditable='true'>Test</div>";
+    //   vis.select("g.mouse")
+    //      .append("foreignObject")
+    //       .attr("width", 60)
+    //       .attr("height", 20)
+    //       .append("xhtml:body")
+    //         .style("font", "14px 'Helvetica Neue'")
+    //         .html(inputHtml);
+    // });
+
+    svg.on("mouseout", function () {
+      d3.selectAll(".mouse").remove();
+    });
+
     svg.on("mousemove", function (e) {
       var graphGroup = get$("graphGroup"),
           popup = get$("popup"),
           x = d3.mouse(graphGroup[0][0])[0],
-          time = interval.floor(xScale.invert(x));
-      var color = Ember.get(App, "topicColors");
-      vis.selectAll(".mouse").remove();
-      vis.selectAll("line.mouse")
-        .data([x])
-        .enter().append("line")
-          .attr("class", "mouse")
+          time = interval.floor(xScale.invert(x)),
+          color = Ember.get(App, "topicColors");
+      // if (get$("lineFrozen")) return;
+
+      var gMouse = vis.selectAll("g.mouse")
+        .data([x-3]);
+
+      gMouse.enter().append("g")
+        .attr("class", "mouse")
+        .append("line")
           .style("stroke", "lightgray")
-          .attr("x1", function (d) { return d; })
-          .attr("x2", function (d) { return d; })
           .attr("y1", 0)
           .attr("y2", height);
 
-      var points = vis.selectAll("path.line").data()
-                    .map(function (d) {
-                        var matching = d.filter(function (p) { return Math.abs(p.x - time) < 1; });
-                        return matching[0] ? {y: matching[0].y, topic: d[0].topic} : {};
-                      });
-      vis.selectAll("circle.mouse")
-        .data(points.filter(function (d) { return d.y; }))
-        .enter().append("circle")
-          .attr("class", "mouse")
-          .attr("cx", x)
-          .attr("cy", function (d) { return yScale(d.y);})
-          .attr("r", 5)
-          .attr("fill", function (d) { return color(d.topic);});
-      var t = points.filter(function(d) { return d.y;});
-      t.sort(function (a,b) { return b.y - a.y;});
-      t = t.map(function (d) { 
-            var topic_name = App.topics[d.topic].get("label");
-            var topic_style = App.topics[d.topic].get("style");
-            var stdev = d.y.toFixed(3) +"&#x3c3;";
-            return "<span style='" + topic_style + "'>" + topic_name + "</span>: " + stdev }).join("<br/>");
-      popup(t, 300, 200, 200,100);
+      gMouse.attr("transform", function (d) { return "translate(" + d + ",0)";});
+
+      gMouse.selectAll("text.year").remove();
+
+      gMouse.append("text")
+        .attr("class", "year")
+        .text(time.getFullYear());
+
+      if (graphType == "line") {
+        var points = []; 
+        vis.selectAll("path.line").each(function (d) {
+                          var matching = d.filter(function (p) { return Math.abs(p.x - time) < 1; }),
+                              y = findYatX(x, this);
+                          points.push(matching[0] ? {y: y, stdDev: matching[0].y, prevalence: matching[0].prevalence, topic: d[0].topic} : {});
+                        });
+
+        var circles = gMouse.selectAll("circle.mouse")
+          .data(points.filter(function (d) { return d.y; }), function (d) { return d.topic; });
+
+        circles.enter().append("circle")
+            .attr("class", "mouse")
+            .attr("r", 5)
+            .style("fill", function (d) { return color(d.topic);})
+            .on("click", function (d) {
+              console.log("clicked");
+               getDocsForInterval([{topic: d.topic}]);
+            });
+
+        circles
+            .attr("cy", function (d) { return d.y; });
+
+      } else if (graphType == "stacked") {
+        var points = vis.selectAll("path.area").data()
+                      .map(function (d) {
+                          var matching = d.filter(function (p) { return Math.abs(p.x - time) < 1; });
+                          return matching[0] ? {y: matching[0].y, stdDev: matching[0].stdDev, prevalence: matching[0].y, topic: d[0].topic} : {};
+                        });
+
+      } else if (graphType == "horizon") {
+        var points = vis.selectAll("g.chartband").data()
+          .map(function (d) {
+              var matching = d.filter(function (p) { return Math.abs(p.x - time) < 1; });
+              return matching[0] ? {y: d.y, stdDev: matching[0].stdDev, prevalence: matching[0].prevalence, topic: d[0].topic} : {};
+            });
+      }
+
+      if (graphType == "line" || graphType == "stacked") {
+            var t = points.filter(function(d) { return d.y;});
+          t.sort(function (a,b) { return b.y - a.y;});
+          t = t.map(function (d) { 
+                var topic = App.topics[d.topic],
+                    topic_name = topic.get("label"),
+                    topic_style = topic.get("style"),
+                    prevalence = (100.0*d.prevalence).toPrecision(3) + "%"
+                    stdDev = d.stdDev.toFixed(3) +"&#x3c3;",
+                    onclick = "App.getDocsForTime(new Date('" + time + "')," + d.topic + ")";
+                return "<span style='max-width: 120px; display: inline-block; text-overflow: ellipsis; white-space: nowrap;" +
+                       "overflow: hidden; " + topic_style + "' onclick='" + onclick + "'>" + topic_name + "</span>: " + prevalence + " (" +stdDev + ")"});
+          // t = t.length > 0 ? ["<p>" + time.getFullYear()].concat(t) : t;
+          t = t.join("<br/>");
+          popup(t, 300, 10, 240,100);        
+      } else {
+        var seenTopics = {};
+        points = points.filter(function (d) { var newTopic = !(d.topic in seenTopics); if (newTopic) seenTopics[d.topic] = true; return newTopic;});
+        var bands = gMouse.selectAll("text").data(points).enter().append("text")
+          .attr("y", function (d) { return d.y;})
+          .style("font-size", "11px")
+          .style("fill-opacity", 0.7)
+          .text(function (d) { 
+            var topic = App.topics[d.topic];
+            if (topic) {
+              var topic_name = topic.get("label"),
+                  topic_style = topic.get("style"),
+                  prevalence = (100.0*d.prevalence).toPrecision(2) + "%"
+                  stdDev = d.stdDev.toFixed(3) +"\u03c3",
+                  label = prevalence + " (" +stdDev + ")";
+              return label;
+            }
+
+          });
+      }
     });
   }.observes("graphType", "vis", "graphGroup"),
 
@@ -549,7 +770,8 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
       vis.selectAll(".popup_svg").remove(); 
       var g = vis.append("g")
         .attr("transform", "translate(" + x + "," + y + ")")
-        .attr("class", "popup_svg");
+        .attr("class", "popup_svg")
+        .style("fill-opacity", "0.8");
       g.append("foreignObject")
           .attr("width", w)
           .attr("height", h)
@@ -558,6 +780,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
             .html(info); 
     };
   }.property("vis"),
+
   gradientDef: Ember.computed(function() {
     var gradientScale = this.get('gradientScale'),
         docCounts = this.get('docCounts'),
@@ -590,6 +813,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
 
     if (!gradientGroup) return;
 
+    gradientGroup.select("#density").remove();
     gradientGroup.append("rect")
       .attr("id", "density")
       .style("fill", "url(#linearGradientDensity)")
@@ -609,6 +833,7 @@ App.TopicGraphParentView = Ember.D3.ChartView.extend({
     this.updateAxes();
     this.updateGraph();
     this.updateGradient();
+    this.renderBrushLine();
   },
   onResizeHandler: function () {
     this.renderContent();
@@ -630,15 +855,15 @@ App.TopicGraphLineView = App.TopicGraphParentView.extend({});
 // }));
 
 App.TopicPrevalenceIconView = Ember.D3.ChartView.extend(Ember.ViewTargetActionSupport, {
-  click: function() { 
+  click: function() {
     this.triggerAction({
       action: "toggle",
-      actionContext: this.get('content'),
-      target: App
+      actionContext: this.get('content')
     });
   },
   width: 32,
   height: Ember.computed.alias("width"),
+  size: Ember.computed.alias("width"),
   minimumWidth: Ember.computed.alias("width"),
   margin: {top: 0, right: 0, bottom: 0, left: 0},
   scale: Ember.computed(function () {
@@ -651,16 +876,18 @@ App.TopicPrevalenceIconView = Ember.D3.ChartView.extend(Ember.ViewTargetActionSu
     var prevalence = this.get('content.prevalence'),
         color = this.get('content.color'),
         isSelected = this.get('content.isSelected'),
+        label = this.get('content.label'),
         svg = this.get('svg'),
         vis = this.get('vis'),
         width = this.get('contentWidth'),
-        scale = this.get('scale');
+        scale = this.get('scale'),
+        onClick = this.get('click').bind(this);
 
     svg.attr("class", "topicBadge");
+    svg.on("click", onClick);
     vis.selectAll("*").remove();
     var g = vis.append("g")
       .attr("transform", "translate(" + width/2 + "," + width/2 + ")")
-
     g.append("circle")
       .attr("stroke", color)
       .attr("fill", "none")
@@ -668,6 +895,8 @@ App.TopicPrevalenceIconView = Ember.D3.ChartView.extend(Ember.ViewTargetActionSu
     g.append("circle")
         .attr("class", "inner")
         .attr("fill", color)
-        .attr("r", scale(prevalence));
+        .attr("r", scale(prevalence))
+        .append("title")
+          .text("Show in graph: " + label);
   }.observes("content.color")
 });

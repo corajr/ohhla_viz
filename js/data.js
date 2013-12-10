@@ -97,6 +97,7 @@ while (len--) {
       date = isoFormatParse(date);
       doc_data[len].date = date;
       doc_data[len].topics = b64toFloatArray(doc_data[len].topics);
+      doc_data[len].url = "http://www.ohhla.com/anonymous/" + doc_data[len].url;
       if (doc_data[len].title.trim() == "") {
         doc_data[len].title = "[untitled]";
       }
@@ -107,6 +108,8 @@ while (len--) {
 }
 
 App.documents = doc_data;
+
+App.overallTimeDomain = d3.extent(App.documents.mapProperty("date"));
 
 App.topics = [];
 

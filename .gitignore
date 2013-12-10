@@ -1,2 +1,5 @@
 .DS_Store
 mallet_*.js
+ohhla_lda.js
+js/topwords/*
+js/bs/*

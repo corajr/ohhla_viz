@@ -2,16 +2,24 @@ window.App = Ember.Application.create({
   LOG_TRANSITIONS: true
 });
 
-App.collectionName = "History of Ethnomusicology";
+App.collectionName = "Original Hip-Hop Lyrics Archive";
 
-App.topicColors = d3.scale.category10();//.domain([0,1,2,3,4,6,5,7,8,9,10,11,12,13,14,15,16,17,18,19]); //d3.scale.category10().domain(d3.range(10));
-//.domain(d3.range(0,20,2).concat(d3.range(1,20,2)))
+App.topicColors = d3.scale.category10();
 // App.timeDomain = [new Date(1820,0,0), new Date(2000,0,0)];
+
 App.reopen({
+  demoteTopicButtons: [
+    Ember.Object.create({title: 'Cancel', clicked: "cancel", dismiss: 'modal', type: 'default'}),
+    Ember.Object.create({title: 'Mark as junk', clicked: "tfidf", type: 'primary'}),
+  ],
+  clickedTopic: function () {
+    var clickedTopicID = this.get('clickedTopicID');
+    return clickedTopicID !== undefined ? App.topics[clickedTopicID] : null;
+  }.property('clickedTopicID').volatile(),
   hoverTopic: function () {
     var hoverTopicID = this.get('hoverTopicID'),
-        clickedTopicID = this.get('clickedTopic'),
-        hoverTopic = clickedTopicID ? App.topics[clickedTopicID] : (hoverTopicID ? App.topics[hoverTopicID] : null);
+        clickedTopic = this.get('clickedTopic'),
+        hoverTopic = clickedTopic ? clickedTopic : (hoverTopicID !== undefined ? App.topics[hoverTopicID] : null);
     return hoverTopic;
   }.property('hoverTopicID', 'clickedTopic').volatile(),
   hoverTopicWords: Ember.computed(function () {
@@ -26,7 +34,7 @@ App.reopen({
   }).property('hoverTopic').volatile(),
   hoverTopicColor: Ember.computed(function () {
     var hoverTopic = this.get('hoverTopic');
-    if (hoverTopic) {
+    if (hoverTopic  !== undefined) {
       return hoverTopic.get('color');
     } else {
       return "#FFF";
@@ -34,7 +42,7 @@ App.reopen({
   }).property('hoverTopic').volatile(),
   showDocs: function (docs, topic) {
     App.set('selectedDocs', docs);
-    App.set('clickedTopic', topic);
+    App.set('clickedTopicID', topic);
     App.set('clickedTopicLabel', App.topics[topic] ? App.topics[topic].get('label') + " (% of document)" : null);
   }
 });
@@ -75,13 +83,15 @@ function itemLink(text, itemID) {
     itemURL = "http://jstor.org/discover/" + itemID;
     mouseover += "JSTOR";
   } else {
-    itemURL = "zotero://select/" + itemID;
-    mouseover += "Zotero";
+    itemURL = getDoc(itemID).get('url');
+    mouseover += "OHHLA";
+    // itemURL = "zotero://select/" + itemID;
+    // mouseover += "Zotero";
   }
 
   itemURL = Ember.Handlebars.Utils.escapeExpression(itemURL);
 
-  var result = '<a href="' + itemURL + '" title="' + mouseover + '">' + text + '</a>';
+  var result = '<a href="' + itemURL + '" target="blank" title="' + mouseover + '">' + text + '</a>';
   return new Ember.Handlebars.SafeString(result);
 }
 

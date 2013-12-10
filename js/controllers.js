@@ -74,8 +74,8 @@ App.DocumentsTableController = Ember.Table.TableController.extend({
       columnWidth: "30%",
       headerCellNameBinding: "App.clickedTopicLabel",
       getCellContent: function (row) {
-        var topic = App.get('clickedTopic');
-        if (topic)
+        var topic = App.get('clickedTopicID');
+        if (topic !== undefined)
           return ratioToStr(row['topics'][topic]);
         else
           return "";
@@ -220,7 +220,6 @@ App.TopicSummaryController = Ember.ObjectController.extend({
   topics:  Ember.computed.alias("controllers.topics"),
   threshold: 0.1,
   content: Ember.computed(function () {
-    console.log("running ");
     var threshold = this.get('threshold');
     var graph = makeCorrelationGraph(threshold);
     return graph;
@@ -234,13 +233,15 @@ App.AutocompleteController = Ember.Controller.extend({
     if (!searchText) { return; }
     try {
       var regex = new RegExp(searchText, 'i');
-      var results = App.topics.filter(function(topic) {
-        return topic.get("label").match(regex);
-      });
+      // var results = App.topics.filter(function(topic) {
+      //   var words = topic.get("topWords").mapProperty("text");
+      //   return a.some(function (d) { return d.match(regex);});
+      // });
+      var results = App.topics.filter(function (topic) { return topic.get("label").match(regex);});
       results.sort(function (a,b) { return b.get("prevalence") - a.get("prevalence")});
       return results.slice(0,5);      
     } catch (e) {
-      console.error(e);
+      console.error(e.stack);
       return;
     }
   }.property('searchText'), 

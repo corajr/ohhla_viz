@@ -1,18 +1,34 @@
 Ember.D3.WordPlotView = Ember.D3.ChartView.extend({
   width: 'auto',
   height: 150,
-  color: "#000",
-  margin: {top: 10, right: 10, bottom: 25, left: 10},
+  color: function () {
+    var color = "#000",
+        colorFunc = App.get("topicColors");
+    if (colorFunc) {
+      color = function(d) {
+        return colorFunc(d.topic);
+      };
+    }
+
+    return color;
+  }.property("App.topicColors"),
+  margin: function () {
+    var labelFontSize = this.get("labelFontSize");
+    return {top: 10, right: 10, bottom: 25, left: labelFontSize};
+  }.property("labelFontSize"),
   labelFontSize: 12,
   fontSize: 11,
   maxWords: 10,
-  xAxisLabel: "Specificity",
+  xAxisLabel: "Generality (IMI(w,D|k))",
   yAxisLabel: "Word Rank",
   xScale: function () {
-    var width = this.get('contentWidth');
+    var width = this.get('contentWidth'),
+        word_data = this.get('content'),
+        values = word_data.length > 0 ? word_data[0].hasOwnProperty('imi') ? word_data.mapProperty('imi') : word_data.mapProperty('idf') : [0,1];
     return d3.scale.linear()
+      .domain(d3.extent(values))
       .range([0, width]);
-  }.property('contentWidth'),
+  }.property('contentWidth', 'content'),
   yScale: function () {
     var height = this.get('contentHeight');
     return d3.scale.linear()
@@ -51,13 +67,14 @@ Ember.D3.WordPlotView = Ember.D3.ChartView.extend({
       vis.selectAll("g.word").remove();    
       word_data.sort(function (a,b) { return b.prob - a.prob;});
       word_data.forEach(function (d,i) {
-        d.x = Math.random();
+        d.x = d.idf ? d.idf : (d.imi ? d.imi : Math.random());
         d.y = i;
       });
 
       svg.selectAll("text")
         .style("font-weight", 200)
         .style("font-size", labelFontSize);
+
       var word_groups = vis.selectAll("g.word")
         .data(word_data).enter().append("g")
           .attr("class", "word")
@@ -70,7 +87,14 @@ Ember.D3.WordPlotView = Ember.D3.ChartView.extend({
         .style("text-anchor", "start")
         .style("font-size", fontSize)
         .style("font-weight", "200")
-        .text(function (d) { return d.text; });
+        .text(function (d) { return d.text; })
+        .append("title")
+          .text(function (d) {
+            var topicID = d.topic;
+            if (topicID) {
+              return d3.format(".2%")(d.prob) + " of doc; assigned to " + App.topics[topicID].get("label");
+            }
+          });
       } catch (e) { console.error(e);}
-  }.observes('content')
+  }.observes('content', 'App.topicColors')
 });

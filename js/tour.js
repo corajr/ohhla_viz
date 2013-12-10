@@ -6,6 +6,7 @@ App.ApplicationView = Ember.View.extend({
         this.setupTour();
     },
     setupTour: function() {
+        if (App.get('tour')) return;
         var tour;
         tour = new Tour();
         tour.addSteps([
@@ -13,13 +14,13 @@ App.ApplicationView = Ember.View.extend({
                 element: "#help",
                 title: "Help",
                 placement: "bottom",
-                content: "Welcome to Paper Machines, a tool for text analysis in the digital humanities.<br/><br/>" +
-                         "Please click next for a guided tour."
+                content: "This is a web supplement to our presentation, &ldquo;Temporal and Regional Variation in Rap Lyrics.&rdquo;<br/><br/>"+
+                " Please click next or hit the right arrow key for a guided tour."
             },
             {
                 element: "#headline a",
                 title: "The Corpus",
-                content: function(){return "This is your corpus, <b>" + $("#headline").text() + "</b>. "+
+                content: function(){return "This is the corpus, <b>" + $("#headline").text() + "</b>. "+
                                            " You are viewing the results of <a href='http://www.scottbot.net/HIAL/?p=19113'>topic modeling</a> on this corpus.";}
             },
             {
@@ -56,7 +57,7 @@ App.ApplicationView = Ember.View.extend({
                 title: "Words in a Topic",
                 onShown: function () {
                     var hoverID = App.topics.slice().sort(function (a,b) { return b.prevalence - a.prevalence; })[0].id;
-                    App.set("clickedTopic", hoverID);
+                    App.set("clickedTopicID", hoverID);
                 },
                 content: "Hovering over an individual topic in the list or on the graph will display the most common words associated with that topic. " +
                          "The vertical axis shows how common each word is, from top (most common) to bottom (most rare). "+
@@ -68,18 +69,17 @@ App.ApplicationView = Ember.View.extend({
                 placement: "top",
                 onShown: function () {
                     var topID = App.topics.slice().sort(function (a,b) { return b.prevalence - a.prevalence; })[0].id;
-                    App.set("clickedTopic", topID);
-                    var middleDate = new Date(d3.sum(App.get("timeDomain"))/2);
+                    App.set("clickedTopicID", topID);
+                    var middleDate = new Date(d3.sum(App.get("overallTimeDomain"))/2);
                     App.getDocsForTime(middleDate, topID);
                 },
                 content: function () {
-                    var middleDate = new Date(d3.sum(App.get("timeDomain"))/2);
+                    var middleDate = new Date(d3.sum(App.get("overallTimeDomain"))/2);
                     return "Clicking on the topic graph in a certain year (e.g. <b>" + middleDate.getFullYear() + "</b>) will fetch documents "+
                     "with a high proportion of that topic at that time.";
                 }
             }
         ]);
-
         App.set('tour', tour);
     },
     didInsertElement: function () {

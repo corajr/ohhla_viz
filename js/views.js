@@ -31,23 +31,19 @@ App.NavbarItemsView = Ember.CollectionView.extend({
 
 App.TopicBoxView = Ember.View.extend(Ember.ViewTargetActionSupport, {
     classNames: ['topicBox'],
-    click: function() { 
-      this.triggerAction({
-        action: "toggle",
-        actionContext: this.get('content')
-      });
-    },
     size: 32,
     mouseEnter: function() { App.set('hoverTopicID', this.get('content.id'));},
     mouseLeave: function() { App.set('hoverTopicID', null);},
+    goToLabel: function () { return "Go to topic: " +this.get('content.label')}.property('content'),
     tagName: 'div',
-    classNameBindings: ['content.isSelected'],
+    classNameBindings: ['content.isSelected', 'content.hidden'],
     templateName: "topicBox"
 });
 
 App.TopicsInnerView = Ember.CollectionView.extend({
   tagName: 'ul',
-  itemViewClass: App.TopicBoxView.extend({tagName: 'li'})
+  itemViewClass: App.TopicBoxView.extend({tagName: 'li'
+  })
 });
 
 App.DocTopicView = Ember.View.extend({
@@ -138,6 +134,16 @@ App.AutocompleteView = Ember.View.extend({
   // }
 });
 
+App.SmallTopicBoxView = App.TopicBoxView.extend({
+    tagName: 'li',
+    topicText: function() { 
+      var topic = this.get('content'),
+          extrainfo = this.get('extrainfo');
+      return topic.get("label") + (extrainfo ? " (" + this.get("extrainfo") + ")" : "");
+    }.property('content'),
+    template: Ember.Handlebars.compile("{{view App.TopicPrevalenceIconView contentBinding=view.content size=16}} " +
+      "{{view.topicText}}")
+  });
 App.AutocompleteResultsView = Ember.CollectionView.extend(JQ.Animate, {
   tagName: 'ul',
   classNames: ['suggestions'],
@@ -159,16 +165,11 @@ App.AutocompleteResultsView = Ember.CollectionView.extend(JQ.Animate, {
       this.hide();
     }
   },
-  itemViewClass: App.TopicBoxView.extend({
-    tagName: 'li',
-    topicText: function() { 
-      var topic = this.get('content');
-      return topic.get("label") + " (" + topic.get("prevalencePercent") + ")";
-    }.property('content'),
-    template: Ember.Handlebars.compile("{{view App.TopicPrevalenceIconView contentBinding=view.content width=16}} " +
-      "{{view.topicText}}")
+  itemViewClass: App.SmallTopicBoxView.extend({
+    'extrainfo': Ember.computed.alias("content.prevalencePercent")
   })
 });
+
 
 // .map(function (d) { return d.get("label") + " (" + d.get("prevalencePercent") + ")";})
 // App.DocCountsLineView = Ember.D3.ChartView.extend({

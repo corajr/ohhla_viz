@@ -21,13 +21,15 @@ App.ApplicationRoute = Ember.Route.extend({
     toggle: function(topic) {
         var topics = this.controllerFor('topics');
         topic.toggleProperty("isSelected");
-      }
+      },
   }
 });
 App.IndexRoute = Ember.Route.extend({
   redirect: function() {
-    this.controllerFor('topics').deselectAll();
-    this.transitionTo('topicGraph');
+    var topics = this.controllerFor('topics');
+    // this.controllerFor('topics').deselectAll();
+    topics.select([6,13,42,48]);
+    this.transitionTo('topicGraph.stacked', topics.get('selected'));
   }
 });
 
@@ -36,8 +38,13 @@ App.DocumentRoute = Ember.Route.extend({
     if (params.itemID) {
       var itemID = decodeURIComponent(params.itemID);
       console.log(itemID);
-      return getDoc(itemID);
-      // return App.documents.findProperty('itemID', itemID);
+
+      var doc = getDoc(itemID);
+      msgpack.download("js/topwords/" + itemID + ".msg", {}, function (data) {
+        doc.set("topWords", data);
+      });
+
+      return doc;
     }
   },
   serialize: function (model) {
@@ -79,9 +86,21 @@ App.TopicGraphRoute = Ember.Route.extend({
             topic.toggleProperty('isSelected');
             this.transitionTo('topicGraph.' + this.get('graphType'), topics.get('selected'));
         },
-        close: function() {
+        unpin: function() {
           App.showDocs();
         },
+        hideTopic: function (topic) {
+          App.set("topicToHide", topic);
+          Ember.$("#hideTopic").modal();
+        },
+        commitHide: function() {
+          var topic = App.get("topicToHide");
+          topic.set("hidden", true);
+          topic.set("isSelected", false);
+          if (topic.get("id") == App.clickedTopic) {
+              App.showDocs();
+          }
+        }
     }
 });
 
